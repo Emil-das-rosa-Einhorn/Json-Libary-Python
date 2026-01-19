@@ -1,29 +1,29 @@
 {
-    "SystemName": "Zentrale_01",
+    "SystemName": "Central_01",
     "Version": 2.1,
     "BuildNumber": 1024,
-    "Aktiviert": true,
-    "Wartungsmodus": false,
-    "LetzterFehler": null,
-    "Temperatur_Celsius": 22.5,
-    "Maximale_Last": 85,
-    "BenutzerID": 550,
+    "Activated": true,
+    "MaintenanceMode": false,
+    "LastError": null,
+    "Temperature_Celsius": 22.5,
+    "Maximum_Load": 85,
+    "UserID": 550,
     "API_Key": "ax-99-bf-12",
     "AutoUpdate": true,
-    "Timeout_Sekunden": 30,
-    "Kritischer_Wert": 99.98,
+    "Timeout_Seconds": 30,
+    "Critical_Value": 99.98,
     "StatusCode": 200,
-    "Backup_Pfad": "/mnt/data/backup",
+    "Backup_Path": "/mnt/data/backup",
     "Sensor_ID": "S-774",
-    "Sensoren_Online": [
-        "Temperatur",
-        "Feuchtigkeit",
-        "Licht"
+    "Sensors_Online": [
+        "Temperature",
+        "Humidity",
+        "Light"
     ],
-    "Koordinaten": {
+    "Coordinates": {
         "x": 52.52,
         "y": 13.40
     },
-    "Benachrichtigungen": null,
+    "Notifications": null,
     "RefreshRate": 1.5
 }

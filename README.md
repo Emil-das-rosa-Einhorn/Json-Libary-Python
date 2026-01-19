@@ -1,78 +1,78 @@
-==========  JSON-BIBLIOTHEK - README (v2.1)  ==========
+==========  JSON LIBRARY - README (v2.1)  ==========
 
-BESCHREIBUNG:
-Diese Bibliothek ermöglicht eine einfache Verwaltung von 
-Konfigurationsdateien in Python. JSON-Daten werden direkt 
-in globale Variablen geladen und bei Änderungen automatisch
-gesichert.
+DESCRIPTION:
+This library enables easy management of configuration 
+files in Python. JSON data is loaded directly into 
+global variables and automatically saved when changes 
+are made.
 
 ------------------------------------------------------------
-HAUPTFEATURES
+MAIN FEATURES
 ------------------------------------------------------------
-* Auto-Load:    JSON-Keys werden zu Python-Variablen.
-* Self-Healing: Automatische Reparatur durch .bak-Dateien.
-* Editor:       Werte interaktiv im Terminal ändern.
-* Sicherheit:   Automatisches Backup vor jedem Schreibvorgang.
-* Datentypen:   Unterstützt int, float, str, bool und None.
+* Auto-Load:    JSON keys become Python variables.
+* Self-Healing: Automatic repair via .bak files.
+* Editor:       Change values interactively in the terminal.
+* Security:     Automatic backup before every write operation.
+* Data Types:   Supports int, float, str, bool, and None.
 
 ------------------------------------------------------------
 INSTALLATION & START
 ------------------------------------------------------------
-1. Datei 'JsonBib.py' in dein Projektverzeichnis kopieren.
-2. Importieren:  import JsonBib as j
+1. Copy the file 'JsonBib.py' into your project directory.
+2. Import:       import JsonBib as j
 3. Setup:        j.bibconfig(autoCreate=True, Print=False)
-4. Laden:        j.load()
+4. Load:         j.load()
 
 ------------------------------------------------------------
-WICHTIGSTE FUNKTIONEN
+MAIN FUNCTIONS
 ------------------------------------------------------------
 
-[X] = Gibt True/False für den Erfolgsstatus zurück.
+[X] = Returns True/False for success status.
 
-1. j.get(Name, Ersatzwert)
-     - Sicherer Zugriff. Gibt den Ersatzwert zurück, falls der
-     - Name in der Config fehlt.
+1. j.get(Name, DefaultValue)
+     - Secure access. Returns the DefaultValue if the
+     - Name is missing in the config.
 
-2. j.edit(Variable, Wert) [X]
-     - Ändert einen bestehenden Wert im Speicher und der Datei.
+2. j.edit(Variable, Value) [X]
+     - Changes an existing value in memory and the file.
 
 3. j.editor()
-     - Öffnet das interaktive Menü. 
-     - Befehle im Editor: '/?' (Liste zeigen), 'exit' (Beenden).
+     - Opens the interactive menu. 
+     - Editor commands: '/?' (Show list), 'exit' (Quit).
 
-4. j.add(Name, Wert) [X]
-     - Erstellt einen komplett neuen Datenpunkt.
+4. j.add(Name, Value) [X]
+     - Creates a completely new data point.
 
 5. addlist(dict) [X]
-   - Fügt mehrere NEUE Datenpunkte gleichzeitig hinzu.
-   - Beispiel: j.addlist({"D1": 10, "D2": 20})
+   - Adds multiple NEW data points simultaneously.
+   - Example: j.addlist({"D1": 10, "D2": 20})
 
 6. search(Varname) [X]
-   - Prüft, ob eine Variable in der Config existiert (True/False).
+   - Checks if a variable exists in the config (True/False).
 
 7. delete(name) [X]
-   - Löscht einen Datenpunkt dauerhaft aus der Datei und dem Speicher.
+   - Permanently deletes a data point from the file and memory.
 
 8. backup() [X]
-    - Erstellt ein Backup der Config Datei (Config.json.bak)
+    - Creates a backup of the config file (Config.json.bak).
 
 9. j.show(Print=True)
-   - Gibt eine Liste aller geladenen Variablen zurück.
+   - Returns a list of all loaded variables.
 
 10. j.info()
-   - Zeigt die ausführliche Hilfe direkt im Terminal an.
+   - Displays detailed help directly in the terminal.
 
 ------------------------------------------------------------
-DATENSICHERHEIT (.bak)
+DATA SECURITY (.bak)
 ------------------------------------------------------------
-Die Bibliothek erstellt automatisch eine 'config.json.bak'.
-Sollte die Hauptdatei beschädigt werden (z.B. durch Fehler
-beim Speichern), stellt die load()-Funktion den letzten
-funktionsfähigen Stand automatisch wieder her.
+The library automatically creates a 'config.json.bak'.
+Should the main file become corrupted (e.g., due to errors
+during saving), the load() function automatically restores
+the last functional state.
 
 ------------------------------------------------------------
-STEUERUNG
+CONTROLS
 ------------------------------------------------------------
-- Abbrechen: Strg+C (im Editor)
-- Null-Werte: In Python 'None', im Editor als 'None' tippen.
-- Booleans: 'True' oder 'False' eingeben.
+- Cancel:    Ctrl+C (inside the editor)
+- Null-Values: In Python 'None', type 'None' in the editor.
+- Booleans:  Enter 'True' or 'False'.

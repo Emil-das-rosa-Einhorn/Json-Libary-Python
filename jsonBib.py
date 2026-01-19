@@ -26,70 +26,69 @@ def bibconfig (autoCreate=None,Print=None):
         config_Print = False
 
 def info():
-    """Gibt eine detaillierte Übersicht über alle Bibliotheks-Funktionen aus."""
     
     header = """
     ============================================================
-    JSON-BIBLIOTHEK - DOKUMENTATION (v2.1)
+    JSON LIBRARY - DOCUMENTATION (v2.1)
     ============================================================
 
     """
     
-    config_info = f"Pfad zur Config: {pfad}"
+    config_info = f"Config Path: {pfad}"
 
     functions = """
 
-    VERFÜGBARE FUNKTIONEN:
-    [Funktionen mit einem [X] geben 'True' zurück wenn diese Erfolgreich 
-    ausgefürt werden und 'False' beim scheitern]
+    AVAILABLE FUNCTIONS:
+    [Functions marked with [X] return 'True' if executed 
+    successfully and 'False' upon failure]
 
     1. load(autoCreate=True/None) [X]
-       Lädt die JSON-Daten in den globalen Speicher.
-       - autoCreate=True: Erstellt eine Basis-Config, falls keine existiert.
-         Beim Weglassen des Arguments wird keine Config Datei erstellt.
-       - sollte die Config Datei beschädigt sein, 
-         versucht die Funktion die Datei aus dem Backup wieder herzustellen.
+       Loads JSON data into global memory.
+       - autoCreate=True: Creates a base config if none exists 
+         or restors it form the Backup.
+         If the argument is omitted, no config file is created.
+       - Should the config file be corrupted, the function 
+         attempts to restore the file from the backup.
 
     2. show(Print=True/None)
-       Gibt alle geladenen Variablen-Namen als Liste zurück.
-       Bei 'True' erfolgt eine Ausgabe im Terminal.
+       Returns all loaded variable names as a list.
+       If set to 'True', output is displayed in the terminal.
 
     3. editor()
-       Interaktives Terminal-Menü zum Ändern von Werten.
-       - '/?' zeigt alle Keys | 'exit' beendet den Modus.
+       Interactive terminal menu for changing values.
+       - '/?' shows all keys | 'exit' terminates the mode.
 
     4. edit(Var, Val) [X]
-       Ändert einen BESTEHENDEN Wert direkt per Code. 
-       Gibt True/False bei Erfolg zurück.
+       Changes an EXISTING value directly via code. 
 
     5. dump(dict) [X]
-       Aktualisiert BESTEHENDE Werte in der JSON. 
-       Verhindert das versehentliche Anlegen neuer Keys.
+       Updates EXISTING values in the JSON. 
+       Prevents accidental creation of new keys.
 
     6. add(Varname, Varvalue) [X]
-       Erstellt einen NEUEN Datenpunkt in der JSON-Datei.
+       Creates a NEW data point in the JSON file.
 
     7. addlist(dict) [X]
-       Fügt mehrere NEUE Datenpunkte gleichzeitig hinzu.
-       Beispiel: j.addlist({"D1": 10, "D2": 20})
+       Adds multiple NEW data points simultaneously.
+       Example: j.addlist({"D1": 10, "D2": 20})
 
     8. search(Varname) [X]
-       Prüft, ob eine Variable in der Config existiert (True/False).
+       Checks if a variable exists in the config (True/False).
 
     9. delete(name) [X]
-       Löscht einen Datenpunkt dauerhaft aus der Datei und dem Speicher.
+       Permanently deletes a data point from the file and memory.
 
     10. backup() [X]
-        Erstellt ein Backup der Config Datei (Config.json.bak)
+        Creates a backup/current state of the config file (Config.json.bak)
 
-    11. get(Var,Ersatzwert)
-        Sicherer Zugriff auf die Daten
-        - I = jsonBib.get("Name",Ersatzwert)
-        - Der Ersatzwert wird genutzt wenn "Name" nicht in der Config Datei ist.
+    11. get(Var, DefaultValue)
+        Secure data access.
+        - I = jsonBib.get("Name", DefaultValue)
+        - The DefaultValue (optional) is used if "Name" is not in the config file.
 
-    STEUERUNG & SICHERHEIT:
-    - Die Delete funktion löscht Daten permanent aus der Config Datei.
-    - Nutze 'Strg+C ' oder 'exit' zum sicheren Abbrechen des Editors.
+    CONTROLS & SECURITY:
+    - The delete function permanently removes data from the config file.
+    - Use 'Ctrl+C' or 'exit' to safely cancel the editor.
     ============================================================
     """
     print(header)
@@ -113,7 +112,7 @@ def load(autoCreate=None):
                     _daten = json.load(f)
                 globals().update(_daten)
                 
-                print("[ERFOLG1] Config wurde aus Backup wiederhergestellt!")
+                print("[INFO] Config has been restored from backup!")
                 backup()
                 return True
             else:
@@ -134,7 +133,7 @@ def load(autoCreate=None):
 
     except (json.JSONDecodeError, ValueError):
         if autoCreate or config_autoCreate:
-            print("[WARNUNG] Config-Datei beschädigt! Versuche Backup zu laden...")
+            print("[WARNING] Config file corrupted! Attempting to load backup...")
             
             backup_pfad = pfad + ".bak"
             
@@ -146,14 +145,14 @@ def load(autoCreate=None):
                     _daten = json.load(f)
                 globals().update(_daten)
                 
-                print("[ERFOLG2] Config wurde aus Backup wiederhergestellt!")
+                print("[INFO] Config has been restored from backup!")
                 backup()
                 return True
             else:
-                print("[FEHLER] Kein Backup vorhanden. Wiederherstellung fehlgeschlagen.")
+                print("[ERROR] No backup available. Recovery failed.")
                 return False
         else:
-            print ("[FEHLER] Kein erstellen der Config Datei aus dem Backup erwünscht")
+            print ("[ERROR] Configuration restore from backup is disabled.")
             return False
 
 def show (Print=None):
@@ -171,26 +170,26 @@ def dump(neue_daten):
         with open(pfad, 'r', encoding='utf-8') as f:
             daten = json.load(f)
     except FileNotFoundError:
-        print("[ERROR] Datei nicht gefunden. Keine Updates möglich.")
+        print("[ERROR] File not found. No updates possible.")
         return False
 
-    gefilterte_daten = {}
-    abgelehnte_keys = []
+    filtered_data = {}
+    rejected_keys = []
 
     for key, wert in neue_daten.items():
         if key in daten:
-            gefilterte_daten[key] = wert
+            filtered_data[key] = wert
         else:
-            abgelehnte_keys.append(key)
+            rejected_keys.append(key)
 
-    if gefilterte_daten:
-        daten.update(gefilterte_daten)
+    if filtered_data:
+        daten.update(filtered_data)
         with open(pfad, 'w', encoding='utf-8') as f:
             json.dump(daten, f, indent=4, ensure_ascii=False)
-        print(f"Update erfolgreich: {list(gefilterte_daten.keys())} aktualisiert.")
+        print(f"Update successful: {list(filtered_data.keys())} updated.")
     
-    if abgelehnte_keys:
-        print(f"[HINWEIS] Neue Datenpunkte ignoriert: {abgelehnte_keys} (Existieren nicht in der Config).")
+    if rejected_keys:
+        print(f"[INFO] New data points ignored: {rejected_keys} (Do not exist in config).")
         return False
     backup()
     return True
@@ -201,18 +200,18 @@ def editor():
         try:
 
             try:
-                dataPoint = (input("Bitte gib den Namen der Variablen ein die du ändern möchtest: "))
+                dataPoint = (input("Please enter the name of the variable you would like to change:"))
                 if dataPoint == "/?":
                     show(True)
                     continue
                 elif dataPoint == "exit":
-                    print ("Editor wird Beendet")
+                    print ("[INFO] Editor session ended.")
                     break
 
                 else:
                     dataVar = globals()[dataPoint]
-                    print (f"Der Aktuelle wert für {dataPoint} ist: {dataVar}")
-                    newValin = (input("Bitte gib den neuen Wert ein: "))
+                    print (f"{dataPoint} is currently set to: {dataVar}")
+                    newValin = (input("Please enter the new value: "))
 
                 if newValin == "False":
                     newValin = False
@@ -245,18 +244,18 @@ def editor():
                             print ("detected String")
                 
             except KeyError:
-                print(f"""[ERROR] Der Datenpunkt '{dataPoint}' existiert nicht in der Cofig Datei.
-gib /? ein um alle variablen angezeigt zu bekommen.""")
+                print(f"""[ERROR] The data point '{dataPoint}' does not exist in the config file. 
+ Type /? to see a list of all variables.""")
 
             except Exception as e:
                 #print (e)
-                print ("[ERROR] Fehlerhafte Eingabe")
+                print ("[ERROR] Invalid input")
 
             else:
                 daten = {dataPoint: newVal}
                 dump (daten)
         except KeyboardInterrupt:
-            print ("Editor wird Beendet")
+            print ("[INFO] Editor session ended.")
             break
 
 def edit(Var, Val):
@@ -270,13 +269,9 @@ def edit(Var, Val):
             if dataPoint == "/?":
                 show(True)
                 return True
-            elif dataPoint == "exit":
-                print ("Editor wird Beendet")
-                return False
-
             else:
                 dataVar = globals()[dataPoint]
-                print (f"Der Aktuelle wert für {dataPoint} ist {dataVar}")
+                print (f"D{dataPoint} is currently set to: {dataVar}")
                 newValin = Val
             
 
@@ -305,19 +300,19 @@ def edit(Var, Val):
                         print ("detected String")
             
         except KeyError:
-            print(f"[ERROR] Der Datenpunkt '{dataPoint}' existiert nicht in der Cofig Datei.")
+            print(f"[ERROR] The data point '{dataPoint}' does not exist in the config file.")
             return False
 
         except Exception as e:
             print (e)
-            print ("[ERROR] Fehlerhafte Eingabe")
+            print ("[ERROR] Invalid input")
             return False
 
         else:
             daten = {dataPoint: newVal}
             dump (daten)
     except KeyboardInterrupt:
-        print ("Editor wird Beendet")
+        print ("[INFO] Editor session ended.")
         return False
     
     return True
@@ -353,7 +348,7 @@ def add(Varname,Varvalue):
     with open(pfad, 'w', encoding='utf-8') as f:
         json.dump(daten, f, indent=4, ensure_ascii=False)
     
-    print(f"Update erfolgreich: {list(newVardata.keys())} aktualisiert.")
+    print(f"Update successful: {list(newVardata.keys())} updated.")
     backup()
     return True
 
@@ -370,7 +365,7 @@ def addlist(newVarlist):
     with open(pfad, 'w', encoding='utf-8') as f:
         json.dump(daten, f, indent=4, ensure_ascii=False)
     
-    print(f"Update erfolgreich: {list(newVarlist.keys())} aktualisiert.")
+    print(f"Update successful: {list(newVarlist.keys())} updated.")
     return True
 
 def delete(name):
@@ -387,15 +382,15 @@ def delete(name):
             if name in globals():
                 del globals()[name]
                 
-            print(f"Datenpunkt '{name}' wurde erfolgreich gelöscht.")
+            print(f"[INFO] '{name}' deleted successfully.")
             backup ()
             return True
         else:
-            print(f"[ERROR] '{name}' existiert nicht und kann nicht gelöscht werden.")
+            print(f"[ERROR] '{name}' does not exist and cannot be deleted.")
             return False
             
     except Exception as e:
-        print(f"Fehler beim Löschen: {e}")
+        print(f"[ERROR] Failed to delete: {e}")
         return False
     
 def get(name, default=None):
