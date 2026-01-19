@@ -7,7 +7,6 @@ pfad = os.path.join(os.path.dirname(__file__), 'config.json')
 config_autoCreate = False
 config_Print = False
 
-# Stelle sicher, dass deine ignore-Liste am Anfang der Datei so aussieht:
 ignore = ["load", "dump", "show", "json", "os", "editor", "edit", "info", 
           "pfad", "Print", "ignore", "search", "add", "addlist", "delete",
           "backup", "get", "bibconfig","config_autoCreate", "config_Print"]
