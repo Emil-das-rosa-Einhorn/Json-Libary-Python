@@ -9,9 +9,9 @@ config_Print = False
 
 ignore = ["load", "dump", "show", "json", "os", "editor", "edit", "info", 
           "pfad", "Print", "ignore", "search", "add", "addlist", "delete",
-          "backup", "get", "bibconfig","config_autoCreate", "config_Print"]
+          "backup", "get", "libconfig","config_autoCreate", "config_Print"]
 
-def bibconfig (autoCreate=None,Print=None):
+def libconfig (autoCreate=None,Print=None):
 
     global config_autoCreate, config_Print
 
