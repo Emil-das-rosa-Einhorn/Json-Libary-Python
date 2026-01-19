@@ -1,5 +1,5 @@
 ==========  JSON-BIBLIOTHEK - README (v2.1)  ==========
-The English version of the library is available in the EN branch.
+- The English version of the library is available in the EN branch.
 
 BESCHREIBUNG:
 Diese Bibliothek ermöglicht eine einfache Verwaltung von 
