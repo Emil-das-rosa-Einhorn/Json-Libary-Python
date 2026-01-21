@@ -9,16 +9,20 @@ reset_pfad = pfad + ".reset"
 config_autoCreate = False
 config_Print = False
 config_set_reset = False
+config_autoLoad = False
+config_check = False
+passed = True
 
 ignore = ["load", "dump", "show", "json", "os", "editor", "edit", "info", 
           "pfad", "Print", "ignore", "search", "add", "addlist", "delete",
           "backup", "get", "libconfig","config_autoCreate", "config_Print", 
-          "config_set_reset", "reset_pfad", "setreset", "validate"]
+          "config_set_reset", "reset_pfad", "setreset", "validate", "config_check",
+          "config_autoLoad", "passed"]
 
 
-def libconfig (autoCreate=None,Print=None,set_reset=None):
+def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None):
 
-    global config_autoCreate, config_Print, config_set_reset
+    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed
 
     if autoCreate is not None:
         config_autoCreate = autoCreate
@@ -33,11 +37,47 @@ def libconfig (autoCreate=None,Print=None,set_reset=None):
     if set_reset is not None:
 
         config_set_reset = set_reset
-
     else:
         config_set_reset = False
 
-    setreset()
+    if autoLoad is not None:
+
+        config_autoLoad = autoLoad
+    else:
+        config_autoLoad = False
+
+    if check is not None:
+
+        config_check = check
+    else:
+        config_check = False
+    
+    if config_check:
+        if os.path.exists(pfad):
+            passed = True
+        else:
+            if config_autoLoad:
+                print("[INFO] Auto loading config...")
+                load()
+                if os.path.exists(pfad):
+                    passed = True
+                else:
+                    print("[ERROR] No Config found and unable to auto load! Please create a config file or disable 'Config check' in libconfig.")
+                    passed = False
+            else:
+                print("[ERROR] No Config found! Please create a config file or disable 'Config check' in libconfig.")
+                passed = False
+    
+    if not setreset():
+        if not config_set_reset:
+            print ("[WARNING] 'Set reset point' is disabled.")
+            if passed:
+                pass
+        else:
+            print ("[WARNING] Could not set reset point. Ensure that the config file exists or 'Set reset point' is enabled.")
+            passed = False
+        
+    return passed
 
 def info():
     
@@ -199,7 +239,6 @@ def setreset(set_reset=None):
             print(f"[ERROR] Failed to set reset point: {e}")
             return False
     else:
-        print ("[INFO] Set reset point is disabled.")
         return False
 
 def show (Print=None):
