@@ -31,7 +31,7 @@ MAIN FUNCTIONS
 [Functions marked with [X] return 'True' if executed 
     successfully and 'False' upon failure]
 
-1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None)
+1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None) [X]
    - Configures the library settings.
       - check=True/None: Enables/disables config file existence check on initialization.
       - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
