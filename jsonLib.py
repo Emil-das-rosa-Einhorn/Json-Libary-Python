@@ -19,7 +19,6 @@ ignore = ["load", "dump", "show", "json", "os", "editor", "edit", "info",
           "config_set_reset", "reset_pfad", "setreset", "validate", "config_check",
           "config_autoLoad", "passed"]
 
-
 def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None):
 
     global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed
@@ -502,6 +501,13 @@ def reset():
         return False
     
 def validate(Var, Valmin, Valmax=None):
+
+    if Var not in globals():
+        print(f"[ERROR] The variable '{Var}' does not exist.")
+        return False
+    if Valmax is not None and isinstance(Valmax, (bool, str, type(None))):
+        print("[ERROR] Valmax must be a number.")
+        return False
     if not isinstance(Valmin, (bool, type(None))):
         if isinstance(Valmin, (int, float)):
             if Valmax is not None:
