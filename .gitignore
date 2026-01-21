@@ -1,4 +1,5 @@
 Libary_test.py
 *.pyc
+config.json
 config.json.reset
 Config.json.bak
