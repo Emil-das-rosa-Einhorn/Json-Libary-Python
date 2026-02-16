@@ -27,13 +27,14 @@ ignore = {
 }
 
 class ConfigContainer:
-    """Ein Container für alle Konfigurationswerte."""
+    """A container for all configuration values."""
     def __getattr__(self, name):
         return None
 
 cfg = ConfigContainer()
 
 def _read(filename=None):
+    """Reads the config file and returns the raw content."""
     if filename is not None:
         fileName(filename)
     if health_check():
@@ -45,6 +46,7 @@ def _read(filename=None):
         return None
 
 def health_check(autoCreate=None):
+    """Checks if the config file exists and creates a new one from the backup if needed."""
     if not os.path.exists(pfad):
         if autoCreate or config_autoCreate:
             if os.path.exists(backup_pfad):
@@ -85,6 +87,7 @@ def health_check(autoCreate=None):
             return False
 
 def scan_keys():
+    """Checks if a group name or key is on the ignore list."""
     if not health_check():
         return False
     
@@ -105,7 +108,20 @@ def scan_keys():
         return True
 
 def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None, filename=None, MsgtoCons = 0):
-
+    """
+       Configures the library settings.
+        - check=True/None: Enables/disables config file existence check on initialization.
+        - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
+        - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
+        - Print=True/None: Enables/disables terminal output
+        - set_reset=True/None: Enables/disables the ability to set reset points.
+        - fileName="Filename"/None: Sets a custom name for the Json file.
+        - MsgtoCons=0-3 controls which messages are printed to the console.
+          - MsgtoCons=0: All messages are printed.
+          - MsgtoCons=1: [WARNING] & [ERROR] are printed.
+          - MsgtoCons=2: [ERROR] is printed.
+          - MsgtoCons=3: No messages are printed.
+    """
     global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global
 
     MsgtoCons_global = MsgtoCons
@@ -169,6 +185,7 @@ def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=Non
     return passed
 
 def fileName(filename):
+    """Sets the name of the config file."""
     global pfad, backup_pfad, reset_pfad
     pfad = os.path.join(os.path.dirname(__file__), filename)
     backup_pfad = pfad + ".bak"
@@ -231,52 +248,48 @@ def info():
        Returns all loaded variable names as a list.
        If set to 'True', output is displayed in the terminal.
 
-    7. editor()
-       Interactive terminal menu for changing values.
-       - '/?' shows all keys | 'exit' terminates the mode.
-
-    8. edit(Var, Val,group="name"/None) [X]
+    7. edit(Var, Val,group="name"/None) [X]
        Changes an EXISTING value directly via code. 
 
-    9. dump(dict) [X]
+    8. dump(dict) [X]
        Updates EXISTING values in the JSON. 
        Prevents accidental creation of new keys.
 
-    10. add(Varname, Varvalue) [X]
+    9. add(Varname, Varvalue) [X]
        Creates a NEW data point in the JSON file.
 
-    11. addlist(dict) [X]
+    10. addlist(dict) [X]
        Adds multiple NEW data points simultaneously.
        Example: j.addlist({"D1": 10, "D2": 20})
 
-    12. search(Varname) [X]
+    11. search(Varname) [X]
        Checks if a variable exists in the config (True/False).
 
-    13. delete(name) [X]
+    12. delete(name) [X]
        Permanently deletes a data point from the file and memory.
 
-    14. backup() [X]
+    13. backup() [X]
         Creates a backup/current state of the config file (Config.json.bak)
 
-    15. get(key, group=None, default=None)
+    14. get(key, group=None, default=None)
         Secure data access.
         - I = jsonBib.get("Name", group="group", default="DefaultValue")
         - The Key is the name of the data point to retrieve.
         - The Group (optional) specifies a subgroup within the JSON structure.
         - The DefaultValue (optional) is used if "Name" is not in the config file.
 
-    16. getAll()
+    15. getAll()
         Returns all data points in the config file as a dictionary.
 
-    17. validate(Var, Valmin, Valmax=None) [X]
+    16. validate(Var, Valmin, Valmax=None) [X]
         Validates if a variable meets specified conditions.
         - For numerical values, both minimum and maximum can be set.
         - For boolean or None values, only Valmin is required.
     
-    18. renameGroup(old_name, new_name) [X]
+    17. renameGroup(old_name, new_name) [X]
         Renames a Group or Key.
 
-    19. compare (Filename1=None,Filename2=None) [X]
+    18. compare (Filename1=None,Filename2=None) [X]
         lets you compare the content of two files.
         if no file name is given the function will compare the 
         set config file and the Config.reset file
@@ -292,12 +305,20 @@ def info():
     print(functions)
 
 def backup():
+    """Creates a backup/current state of the config file (Config.json.bak)"""
     if os.path.exists(pfad):
         shutil.copy(pfad, pfad + ".bak")
         return True
     return False
 
 def load(autoCreate=None):
+    """Loads JSON data into global memory.
+       - autoCreate=True: Creates a base config if none exists 
+         or restors it form the Backup.
+         If the argument is omitted, no config file is created.
+       - Should the config file be corrupted, the function 
+         attempts to restore the file from the backup."""
+    
     scan_keys()
     if health_check(autoCreate=autoCreate):
         with open(pfad, 'r', encoding='utf-8') as f:
@@ -311,6 +332,10 @@ def load(autoCreate=None):
         return False
 
 def setreset(set_reset=None):
+    """
+    Sets a reset point by creating a .reset backup of the current config file.
+         - set_reset=True/None: Enables/disables the ability to set reset points.
+    """
     if config_set_reset or set_reset:
         if not health_check():
             return False
@@ -327,6 +352,8 @@ def setreset(set_reset=None):
         return False
 
 def show (Print=None):
+    """Returns all loaded variable names as a list.
+       If set to 'True', output is displayed in the terminal."""
     variablen = [name for name in cfg.__dict__ if not name.startswith("__")]
     if Print or config_Print:
         print (variablen)
@@ -335,6 +362,9 @@ def show (Print=None):
     return variablen
 
 def dump(neue_daten, group=None):
+    """ Updates EXISTING values in the JSON. 
+       Prevents accidental creation of new keys."""
+    
     if not health_check():
         return False
     
@@ -385,6 +415,8 @@ def dump(neue_daten, group=None):
     return False
 
 def edit(Var, Val, group=None):
+    """Changes an EXISTING value directly via code."""
+
     if not health_check():
         return False
     
@@ -405,7 +437,7 @@ def edit(Var, Val, group=None):
         return False
 
 def search (Varsearch):
-
+    """Checks if a variable exists in the config (True/False)."""
     if not health_check():
         return False
     
@@ -425,6 +457,7 @@ def search (Varsearch):
         return False
     
 def add(Varname,Varvalue):
+    """Creates a NEW data point in the JSON file."""
 
     if not health_check():
         return False
@@ -458,7 +491,8 @@ def add(Varname,Varvalue):
     return True
 
 def addlist(newVarlist):
-
+    """Adds multiple NEW data points simultaneously.
+       Example: j.addlist({"D1": 10, "D2": 20})"""
     if not health_check():
         return False
 
@@ -490,7 +524,7 @@ def addlist(newVarlist):
     return True
 
 def delete(name):
-
+    """Permanently deletes a data point from the file and memory."""
     if not health_check():
         return False
 
@@ -526,6 +560,11 @@ def delete(name):
         return False
     
 def get(key, group=None, default=None):
+    """Secure data access.
+        - I = jsonBib.get("Name", group="group", default="DefaultValue")
+        - The Key is the name of the data point to retrieve.
+        - The Group (optional) specifies a subgroup within the JSON structure.
+        - The DefaultValue (optional) is used if "Name" is not in the config file."""
     try:
         with open(pfad, 'r', encoding='utf-8') as f:
             daten = json.load(f)
@@ -559,6 +598,7 @@ def get(key, group=None, default=None):
         return default
     
 def getAll():
+    """Returns all data points in the config file as a dictionary."""
     health_check()
     backup()
     try:
@@ -569,6 +609,7 @@ def getAll():
         return None
 
 def reset():
+    """Restores the config file from the .reset backup."""
     try:
         if os.path.exists(reset_pfad):
             if os.path.exists(pfad):
@@ -586,7 +627,9 @@ def reset():
         return False
     
 def validate(Var, Valmin, Valmax=None):
-
+    """Validates if a variable meets specified conditions.
+        - For numerical values, both minimum and maximum can be set.
+        - For boolean or None values, only Valmin is required."""
     if not health_check():
         return False
     
@@ -617,6 +660,7 @@ def validate(Var, Valmin, Valmax=None):
             return False
         
 def renameGroup(old_name, new_name):
+    """Renames a Group or Key."""
     if not health_check():
         return False
     
@@ -652,6 +696,10 @@ def renameGroup(old_name, new_name):
         return False
     
 def compare (Filename1=None,Filename2=None):
+    """lets you compare the content of two files.
+        if no file name is given the function will compare the 
+        set config file and the Config.reset file"""
+    
     if Filename1 == None:
         file1_pfad = pfad
     else:
