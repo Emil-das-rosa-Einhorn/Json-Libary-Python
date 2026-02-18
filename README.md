@@ -30,7 +30,7 @@ MAIN FUNCTIONS
 [Functions marked with [X] return 'True' if executed 
     successfully and 'False' upon failure]
 
-1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None,fileName="Filename"/None) [X]
+1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None,fileName="Filename"/None MsgtoCons=0-3) [X]
    - Configures the library settings.
       - check=True/None: Enables/disables config file existence check on initialization.
       - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
@@ -38,6 +38,11 @@ MAIN FUNCTIONS
       - Print=True/None: Enables/disables terminal output
       - set_reset=True/None: Enables/disables the ability to set reset points.
       - fileName="Filename"/None: Sets a custom name for the Json file.
+      - MsgtoCons=0-3 controls which messages are printed to the console.
+          - MsgtoCons=0: All messages are printed.
+          - MsgtoCons=1: [WARNING] & [ERROR] are printed.
+          - MsgtoCons=2: [ERROR] is printed.
+          - MsgtoCons=3: No messages are printed.
 
 2. filename(filename) [X]
    - Sets the name of the config file.
