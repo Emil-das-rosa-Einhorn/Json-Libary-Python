@@ -107,7 +107,7 @@ def scan_keys():
     else:
         return True
 
-def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None, filename=None, MsgtoCons = 0):
+def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0):
     """
        Configures the library settings.
         - check=True/None: Enables/disables config file existence check on initialization.
@@ -126,32 +126,34 @@ def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=Non
 
     MsgtoCons_global = MsgtoCons
 
-    if filename is not None:
+    if filename is not None and filename is not False:
         fileName(filename)
 
-    if autoCreate is not None:
+    if autoCreate is not None and autoCreate is not False:
         config_autoCreate = autoCreate
     else:
         config_autoCreate = False
 
-    if Print is not None:
+    if Print is not None and Print is not False:
         config_Print = Print
     else:
         config_Print = False
 
-    if set_reset is not None:
+    if set_reset is not None and set_reset is not False:
 
         config_set_reset = set_reset
     else:
         config_set_reset = False
 
-    if autoLoad is not None:
+    if autoLoad is not None and autoLoad is not False:
 
         config_autoLoad = autoLoad
+        load()
+
     else:
         config_autoLoad = False
 
-    if check is not None:
+    if check is not None and check is not False:
 
         config_check = check
     else:
@@ -321,13 +323,12 @@ def load(autoCreate=None):
     
     scan_keys()
     if health_check(autoCreate=autoCreate):
-        with open(pfad, 'r', encoding='utf-8') as f:
-            _daten = json.load(f)
-            cfg.__dict__.clear()
-            cfg.__dict__.update(_daten)
-            
-            if MsgtoCons_global <= 0: print(f"[INFO] Config file loaded into 'cfg' object.")
-            return True
+        _daten = _read()
+        cfg.__dict__.clear()
+        cfg.__dict__.update(_daten)
+        
+        if MsgtoCons_global <= 0: print(f"[INFO] Config file loaded into 'cfg' object.")
+        return True
     else:
         return False
 
@@ -370,8 +371,7 @@ def dump(neue_daten, group=None):
     
     backup()
     try:
-        with open(pfad, 'r', encoding='utf-8') as f:
-            daten = json.load(f)
+        daten = _read()
     except FileNotFoundError:
         if MsgtoCons_global <= 2: print("[ERROR] File not found.")
         return False
@@ -467,12 +467,8 @@ def add(Varname,Varvalue):
             if MsgtoCons_global <= 2: print(f"[ERROR] '{Varname}' is a reserved keyword and cannot be used as a variable name.")
             return False
     newVardata = {Varname: Varvalue}
-    try:
-        with open(pfad, 'r', encoding='utf-8') as f:
-            daten = json.load(f)
-    except FileNotFoundError:
-        daten = {}
-        return False
+
+    daten = _read()
 
     daten.update(newVardata)
 
@@ -501,12 +497,7 @@ def addlist(newVarlist):
             if MsgtoCons_global <= 2: print(f"[ERROR] '{a}' is a reserved keyword and cannot be used as a variable name.")
             return False
         
-    try:
-        with open(pfad, 'r', encoding='utf-8') as f:
-            daten = json.load(f)
-    except FileNotFoundError:
-        daten = {}
-        return False
+    daten = _read()
 
     daten.update(newVarlist)
 
@@ -529,8 +520,7 @@ def delete(name):
         return False
 
     try:
-        with open(pfad, 'r', encoding='utf-8') as f:
-            daten = json.load(f)
+        daten = _read()
         
         if name in daten:
             del daten[name]
@@ -566,8 +556,7 @@ def get(key, group=None, default=None):
         - The Group (optional) specifies a subgroup within the JSON structure.
         - The DefaultValue (optional) is used if "Name" is not in the config file."""
     try:
-        with open(pfad, 'r', encoding='utf-8') as f:
-            daten = json.load(f)
+        daten = _read()
 
         if group is not None:
             if group in daten and key in daten[group]:
@@ -666,19 +655,18 @@ def renameGroup(old_name, new_name):
     
     try:
         backup()
-        with open(pfad, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        daten = _read()
 
-        if new_name in data:
+        if new_name in daten:
             if MsgtoCons_global <= 2: print(f"[ERROR] Group '{new_name}' already exists.")
             return False
-        if old_name in data:
-            data[new_name] = data.pop(old_name)
+        if old_name in daten:
+            daten[new_name] = daten.pop(old_name)
             
             with open(pfad, 'w', encoding='utf-8') as f:
                 try:
                     portalocker.lock(f, portalocker.LOCK_EX)
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+                    json.dump(daten, f, indent=4, ensure_ascii=False)
                     f.flush()
                 except Exception as e:
                     return False
