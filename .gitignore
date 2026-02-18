@@ -1,6 +1,7 @@
 *.pyc
 *.json
 Libary_Test.py
+config.json.example
 Test.py
 Notizen.txt
 __pycache__/
