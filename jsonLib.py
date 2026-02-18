@@ -1,9 +1,8 @@
 import json
 import os
 import shutil
+import tempfile
 import portalocker
-
-"""Save-Logic-v2"""
 
 file_Name = 'files/config.json'
 
@@ -23,7 +22,9 @@ konflikte = []
 
 ignore = {
     '__annotations__', '__builtins__', '__cached__', '__doc__', 
-    '__file__', '__loader__', '__name__', '__package__', '__spec__'
+    '__file__', '__loader__', '__name__', '__package__', '__spec__',
+    '_lock', '_target', '__dict__', '__class__', '__init__', '__getattr__', 
+    '__setattr__', '__delattr__', '__members__', '__module__'
 }
 
 class ConfigContainer:
@@ -45,6 +46,34 @@ def _read(filename=None):
         if MsgtoCons_global <= 2: print ("[ERROR] File could not be Opened")
         return None
 
+def _write(daten, filename=None):
+
+    if filename is not None:
+        fileName(filename)
+    
+    ordner = os.path.dirname(pfad)
+    if not os.path.exists(ordner) and ordner != '':
+        if MsgtoCons_global <= 2: print ("[ERROR] Directory does not exist. Please create the directory or specify a valid path.")
+        return False
+
+    fd, temp_pfad = tempfile.mkstemp(dir=ordner, prefix="temp_cfg_", suffix=".json")
+
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            portalocker.lock(f, portalocker.LOCK_EX)
+            json.dump(daten, f, indent=4, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+            portalocker.unlock(f)
+        os.replace(temp_pfad, pfad)
+        return True
+
+    except Exception as e:
+        print(f"[ERROR] Atomic write failed: {e}")
+        if os.path.exists(temp_pfad):
+            os.remove(temp_pfad)
+        return False
+
 def health_check(autoCreate=None):
     """Checks if the config file exists and creates a new one from the backup if needed."""
     if not os.path.exists(pfad):
@@ -55,8 +84,7 @@ def health_check(autoCreate=None):
                 return True
             else:
                 standard_daten = {"Version": 1.0}
-                with open(pfad, 'w', encoding='utf-8') as f:
-                    json.dump(standard_daten, f, indent=4)
+                _write (standard_daten)
                 return True
         return False
 
@@ -75,8 +103,6 @@ def health_check(autoCreate=None):
                 os.remove(pfad)
                 os.rename(backup_pfad, pfad)
                 
-                with open(pfad, 'r', encoding='utf-8') as f:
-                   pass
                 if MsgtoCons_global <= 0: print("[INFO] Config has been restored from backup!")
                 return True
             else:
@@ -86,28 +112,41 @@ def health_check(autoCreate=None):
             if MsgtoCons_global <= 2: print ("[ERROR] Configuration restore from backup is disabled.")
             return False
 
-def scan_keys():
+def scan_keys(daten=None):
     """Checks if a group name or key is on the ignore list."""
     if not health_check():
         return False
     
+    if daten is not None:
+        konflikte = set(daten.keys()) & ignore
+    
+        if konflikte:
+            if MsgtoCons_global <= 2:
+                print(f"[ERROR] Key conflict detected: {konflikte}")
+            return False
+        return True
     else:
         _daten = _read()
     check_failed = False
+    Key_list = []
+    ER_Key_list = []
     for key in _daten.keys():
         if key in ignore:
             konflikte.append(key)
             if MsgtoCons_global <= 1: print(f"[WARNING] Key conflict detected: '{key}' is a reserved keyword and cannot be used as a variable name.")
             check_failed = True
+            ER_Key_list.append(key)
         else:
-            if MsgtoCons_global <= 0: print (f"[INFO] {key} is not a reserved keyword")
-        
+            Key_list.append(key)
+    
+    if MsgtoCons_global <= 0: print (f"[INFO] {Key_list} is not a reserved keyword")
+    
     if check_failed:
         return False
     else:
         return True
 
-def libconfig (check=None,autoLoad=None,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0):
+def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0):
     """
        Configures the library settings.
         - check=True/None: Enables/disables config file existence check on initialization.
@@ -295,6 +334,11 @@ def info():
         lets you compare the content of two files.
         if no file name is given the function will compare the 
         set config file and the Config.reset file
+
+    19. scan_keys(daten=None) [X]
+       Checks if a group name or key is on the ignore list.
+        - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
+        - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
         
 
     CONTROLS & SECURITY:
@@ -362,11 +406,17 @@ def show (Print=None):
         pass
     return variablen
 
-def dump(neue_daten, group=None):
+def dump(new_data, group=None):
     """ Updates EXISTING values in the JSON. 
        Prevents accidental creation of new keys."""
     
     if not health_check():
+        return False
+    
+    if not scan_keys(new_data):
+        return False
+    
+    if  group in ignore:
         return False
     
     backup()
@@ -377,38 +427,35 @@ def dump(neue_daten, group=None):
         return False
 
     success = False
-
-    if group:
-        if group in daten and isinstance(daten[group], dict):
-            for key, wert in neue_daten[group].items():
-                if key in daten[group]:
-                    daten[group][key] = wert
-                    if MsgtoCons_global <= 0: print(f"Update in '{group}': {key} updated.")
+    try:
+        if group:
+            if group in daten and isinstance(daten[group], dict):
+                for key, wert in new_data[group].items():
+                    if key in daten[group]:
+                        daten[group][key] = wert
+                        if MsgtoCons_global <= 0: print(f"[INFO] Update in '{group}': {key} updated.")
+                        success = True
+                    else:
+                        if MsgtoCons_global <= 2: print(f"[ERROR] Key '{key}' not found in group '{group}'.")
+            else:
+                if MsgtoCons_global <= 2: print(f"[ERROR] Group '{group}' does not exist.")
+                return False
+        else:
+            for key, wert in new_data.items():
+                if key in daten:
+                    daten[key] = wert
+                    if MsgtoCons_global <= 0: print(f"[INFO] Update successful: {key} updated.")
                     success = True
                 else:
-                    if MsgtoCons_global <= 2: print(f"[ERROR] Key '{key}' not found in group '{group}'.")
-        else:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Group '{group}' does not exist.")
-            return False
-    else:
-        for key, wert in neue_daten.items():
-            if key in daten:
-                daten[key] = wert
-                if MsgtoCons_global <= 0: print(f"Update successful: {key} updated.")
-                success = True
-            else:
-                if MsgtoCons_global <= 0: print(f"[INFO] Key '{key}' ignored (exists not).")
-
+                    if MsgtoCons_global <= 0: print(f"[INFO] Key '{key}' ignored (exists not).")
+    except Exception as e:
+        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to update: {e}")
+        return False
+    
     if success:
-        with open(pfad, 'w', encoding='utf-8') as f:
-            try:
-                portalocker.lock(f, portalocker.LOCK_EX)
-                json.dump(daten, f, indent=4, ensure_ascii=False)
-                f.flush()
-            except Exception as e:
-                return False
-            finally:
-                portalocker.unlock(f)
+        olddaten = _read()
+        olddaten.update(daten)
+        _write(daten)
         backup()
         return True
     
@@ -472,15 +519,7 @@ def add(Varname,Varvalue):
 
     daten.update(newVardata)
 
-    with open(pfad, 'w', encoding='utf-8') as f:
-        try:
-            portalocker.lock(f, portalocker.LOCK_EX)
-            json.dump(daten, f, indent=4, ensure_ascii=False)
-            f.flush()
-        except Exception as e:
-            return False
-        finally:
-            portalocker.unlock(f)
+    _write(daten)
     
     if MsgtoCons_global <= 0: print(f"Update successful: {list(newVardata.keys())} updated.")
     backup()
@@ -501,15 +540,7 @@ def addlist(newVarlist):
 
     daten.update(newVarlist)
 
-    with open(pfad, 'w', encoding='utf-8') as f:
-        try:
-            portalocker.lock(f, portalocker.LOCK_EX)
-            json.dump(daten, f, indent=4, ensure_ascii=False)
-            f.flush()
-        except Exception as e:
-            return False
-        finally:
-            portalocker.unlock(f)
+    _write(daten)
     
     if MsgtoCons_global <= 0: print(f"Update successful: {list(newVarlist.keys())} updated.")
     return True
@@ -524,19 +555,10 @@ def delete(name):
         
         if name in daten:
             del daten[name]
+            _write(daten)
             
-            with open(pfad, 'w', encoding='utf-8') as f:
-                try:
-                    portalocker.lock(f, portalocker.LOCK_EX)
-                    json.dump(daten, f, indent=4, ensure_ascii=False)
-                    f.flush()
-                except Exception as e:
-                    return False
-                finally:
-                    portalocker.unlock(f)
-            
-            if name in globals():
-                del globals()[name]
+            if hasattr(cfg, name): 
+                delattr(cfg, name)
                 
             if MsgtoCons_global <= 0: print(f"[INFO] '{name}' deleted successfully.")
             backup ()
@@ -663,15 +685,7 @@ def renameGroup(old_name, new_name):
         if old_name in daten:
             daten[new_name] = daten.pop(old_name)
             
-            with open(pfad, 'w', encoding='utf-8') as f:
-                try:
-                    portalocker.lock(f, portalocker.LOCK_EX)
-                    json.dump(daten, f, indent=4, ensure_ascii=False)
-                    f.flush()
-                except Exception as e:
-                    return False
-                finally:
-                    portalocker.unlock(f)
+            _write(daten)
             
             if MsgtoCons_global <= 0: print(f"[SUCCESS] Group '{old_name}' renamed to '{new_name}'")
             return True
