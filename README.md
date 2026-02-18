@@ -18,10 +18,12 @@ MAIN FEATURES
 INSTALLATION & START
 ------------------------------------------------------------
 1. Copy the file 'JsonBib.py' into your project directory.
-2. Import:       import JsonBib as j
-3. Setup:        j.bibconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None,fileName="Filename"/None)
-4. Load:         j.load()
-5. Info:         j.info()
+2. download and Install Portalocker (https://github.com/wolph/portalocker.git)
+3. Import: - import JsonBib as j
+4. Setup: - j.libconfig( [...] )
+5. Load: - j.load()
+6. Info: - j.info()
+7. Access: - print(j.cfg.Version)  # Access your data directly
 
 ------------------------------------------------------------
 MAIN FUNCTIONS
@@ -43,6 +45,7 @@ MAIN FUNCTIONS
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
+    - NOTE: Ensure a directory named 'files' exists, or use autoCreate=True in libconfig.
 
 2. filename(filename) [X]
     - Sets the name of the config file.
@@ -117,16 +120,14 @@ MAIN FUNCTIONS
 ------------------------------------------------------------
 DATA SECURITY (.bak/.reset)
 ------------------------------------------------------------
-The library automatically creates a 'config.json.bak'.
-Should the main file become corrupted (e.g., due to errors
-during saving), the load() function automatically restores
-the last functional state. Additionally, users can manually 
-create a dedicated reset point, allowing for a full Config 
-recovery to a specifically defined state at any time."
+To ensure maximum data integrity, the library uses multiple strategys:
 
-------------------------------------------------------------
-CONTROLS
-------------------------------------------------------------
-- Cancel:    Ctrl+C (inside the editor)
-- Null-Values: In Python 'None', type 'None' in the editor.
-- Booleans:  Enter 'True' or 'False'.
+- Atomic Write Operations: Instead of overwriting the config file directly, the library writes to a temporary file first. Only after the data is safely on the disk is the original file replaced (os.replace). This prevents "half-written" or empty files if the program crashes or the power fails.
+
+- Hardware Persistence: Each save operation uses os.fsync() to force the operating system to physically write the data to the storage medium, preventing data loss held in volatile cache.
+
+- File Locking: To prevent race conditions in multi-process environments, the library uses portalocker to lock the file during the write process, ensuring that only one instance can modify the configuration at a time.
+
+- Self-Healing (Auto-Backup): The library automatically maintains a config.json.bak. If the main file becomes corrupted or unreadable, the load() function automatically restores the last known functional state.
+
+- Manual Snapshots: Users can create dedicated .reset points to freeze a specific configuration state, allowing for a full recovery to that defined baseline at any time.
