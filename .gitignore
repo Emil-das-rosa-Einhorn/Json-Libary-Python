@@ -1,5 +1,6 @@
-Libary_Test.py
 *.pyc
+*.json
+Libary_Test.py
 Test.py
 Notizen.txt
 __pycache__/
