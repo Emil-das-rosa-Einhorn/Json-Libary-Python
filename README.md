@@ -1,4 +1,4 @@
-==========  JSON LIBRARY - README (v2.1)  ==========
+==========  JSON LIBRARY - README (v3.0)  ==========
 
 DESCRIPTION:
 This library enables easy management of configuration files in Python. 
@@ -10,7 +10,6 @@ MAIN FEATURES
 ------------------------------------------------------------
 * Auto-Load:    Import keys as a class for easy access.
 * Self-Healing: Automatic repair via .bak files.
-* Editor:       Change values interactively in the terminal.
 * Security:     Automatic backup before every write operation.
 * Reset:        Enable manual snapshots for config recovery.
 * Data Types:   Supports int, float, str, bool, and None.
@@ -34,6 +33,7 @@ MAIN FUNCTIONS
    - Configures the library settings.
       - check=True/None: Enables/disables config file existence check on initialization.
       - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
+         - This option is True on default
       - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
       - Print=True/None: Enables/disables terminal output
       - set_reset=True/None: Enables/disables the ability to set reset points.
@@ -45,72 +45,74 @@ MAIN FUNCTIONS
           - MsgtoCons=3: No messages are printed.
 
 2. filename(filename) [X]
-   - Sets the name of the config file.
+    - Sets the name of the config file.
 
 3. setreset(set_reset=TrueNone) [X]
-   - Sets a reset point by creating a .reset backup of the current config file.
+    - Sets a reset point by creating a .reset backup of the current config file.
       - set_reset=True/None: Enables/disables the ability to set reset points.
     
 4. reset() [X]
-   - Restores the config file from the .reset backup.
+    - Restores the config file from the .reset backup.
     
 5. load(autoCreate=True/None) [X]
-   - Loads JSON data into global memory.
+    - Loads JSON data into global memory.
       - autoCreate=True: Creates a base config if none exists or restors it form the Backup. If the argument is omitted, no config file is created.
-   - Should the config file be corrupted, the function attempts to restore the file from the backup.
+    - Should the config file be corrupted, the function attempts to restore the file from the backup.
 
 6. show(Print=True/None)
-   - Returns all loaded variable names as a list. If set to 'True', output is displayed in the terminal.
+    - Returns all loaded variable names as a list. If set to 'True', output is displayed in the terminal.
 
-7. editor()
-   - Interactive terminal menu for changing values.
-      - '/?' shows all keys | 'exit' terminates the mode.
+7. edit(Var, Val) [X]
+    - Changes an EXISTING value directly via code. 
 
-8. edit(Var, Val) [X]
-   - Changes an EXISTING value directly via code. 
-
-9. dump(dict) [X]
-   - Updates EXISTING values in the JSON. 
+8. dump(dict) [X]
+    - Updates EXISTING values in the JSON. 
       - Prevents accidental creation of new keys.
 
-10. add(Varname, Varvalue) [X]
-   - Creates a NEW data point in the JSON file.
+9. add(Varname, Varvalue) [X]
+    - Creates a NEW data point in the JSON file.
 
-11. addlist(dict) [X]
-   - Adds multiple NEW data points simultaneously.
+10. addlist(dict) [X]
+    - Adds multiple NEW data points simultaneously.
       - Example: j.addlist({"D1": 10, "D2": 20})
 
-12. search(Varname) [X]
-   - Checks if a variable exists in the config (True/False).
+11. search(Varname) [X]
+    - Checks if a variable exists in the config (True/False).
 
-13. delete(name) [X]
-   - Permanently deletes a data point from the file and memory.
+12. delete(name) [X]
+    - Permanently deletes a data point from the file and memory.
 
-14. backup() [X]
-   - Creates a backup/current state of the config file (Config.json.bak)
+13. backup() [X]
+    - Creates a backup/current state of the config file (Config.json.bak)
 
-15. get(key, group=None, default=None)
-   - Secure data access.
+14. get(key, group=None, default=None)
+    - Secure data access.
       - I = jsonBib.get("Name", group="group", default="DefaultValue")
       - The Key is the name of the data point to retrieve.
       - The Group (optional) specifies a subgroup within the JSON structure.
       - The DefaultValue (optional) is used if "Name" is not in the config file.
 
-16. getAll()
-        Returns all data points in the config file as a dictionary.
+15. getAll()
+    - Returns all data points in the config file as a dictionary.
 
-17. validate(Var, Valmin, Valmax=None) [X]
+16. validate(Var, Valmin, Valmax=None) [X]
    - Validates if a variable meets specified conditions.
       - For numerical values, both minimum and maximum can be set.
       - For boolean or None values, only Valmin is required.
 
-18. renameGroup(old_name, new_name) [X]
-   - Renames a Group or Key.
+17. renameGroup(old_name, new_name) [X]
+    - Renames a Group or Key.
 
-19. compare (Filename1=None,Filename2=None) [X]
-   - lets you compare the content of two files.
+18. compare (Filename1=None,Filename2=None) [X]
+    - lets you compare the content of two files.
      if no file name is given the function will compare the 
      set config file and the Config.reset file
+
+19. scan_keys(daten=None) [X]
+    - Checks if a group name or key is on the ignore list.
+        - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
+        - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
+        
 
 ------------------------------------------------------------
 DATA SECURITY (.bak/.reset)
