@@ -5,3 +5,9 @@ config.json.reset
 config.json.bak
 Test.py
 Notizen.txt
+config.json
+config.json.bak
+config.json.reset
+data.json
+data.json.bak
+data.json.reset
