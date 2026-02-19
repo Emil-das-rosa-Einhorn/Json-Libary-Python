@@ -1,4 +1,16 @@
-{
+{ 
+    "_header": {
+        "ConfVersion": "3.0",
+        "mode": "production",
+        "refresh": true,
+        "locked": true,
+        "check": null,
+        "autoLoad": null,
+        "autoCreate": null,
+        "Print": null,
+        "set_reset": null,
+        "MsgtoCons": 3
+    },
     "SystemName": "Central_01",
     "Version": 2.1,
     "BuildNumber": 1024,
