@@ -4,6 +4,8 @@ import shutil
 import tempfile
 import portalocker
 import datetime
+import threading
+import time
 
 file_Name = 'files/config.json'
 
@@ -22,6 +24,8 @@ locked = "unlocked" #unlocked, soft_lock, hard_lock
 refresh = False
 mode = "normal" #normal, safe_mode
 ConfVersion = 1.0
+refresh_cycle = False
+refresh_alive = False
 
 konflikte = []
 
@@ -91,11 +95,42 @@ def _write(daten, filename=None):
         if os.path.exists(temp_pfad):
             os.remove(temp_pfad)
         return False
-    
-def refrech():
+
+def check_refresh_toggle(cycle=None):
+    """Starts and stops the refresh cycle that periodically checks the file integrity and loads the Keys."""
+    global refresh_cycle
+    if cycle:
+        refresh_cycle = True
+        if MsgtoCons_global <= 0: print("[INFO] Refresh cycle enabled.")
+    elif cycle is None:
+        refresh_cycle = not refresh_cycle
+        if refresh_cycle:
+            if MsgtoCons_global <= 0: print("[INFO] Refresh cycle enabled.")
+        else:
+            if MsgtoCons_global <= 0: print("[INFO] Refresh cycle disabled.")
+    else:
+        refresh_cycle = False
+        if MsgtoCons_global <= 0: print("[INFO] Refresh cycle disabled.")
+
+def check_refresh(interval=5):
     """Starts a background thread that periodically checks the file integrity and loads the Keys.
     It will automatically attempt a recovery if the file is corrupted."""
-    pass
+    global refresh_alive
+    def run_check():
+        while True:
+            time.sleep(interval)
+            if refresh_cycle:
+                if not health_check():
+                    if MsgtoCons_global <= 1:
+                        print("[WARNING] File integrity issue detected and handled.")
+                else:
+                    if refresh:
+                        load()
+                        if MsgtoCons_global <= 0: print(f"[INFO] File loaded successfully.")
+    if not refresh_alive:
+        refresh_alive = True
+        thread = threading.Thread(target=run_check, daemon=True)
+        thread.start()
 
 def health_check(autoCreate=None):
     """Checks if the config file exists and creates a new one from the backup if needed."""
@@ -201,6 +236,9 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
         autoLoad = True 
         set_reset = True
         check = True
+        check_refresh()
+        check_refresh_toggle(cycle=True)
+        
     ConfVersion = get ("ConfVersion", group="_header", default=1.0)
 
     if MsgtoCons_global <= 0: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked}, refresh={refresh}, mode='{mode}', ConfVersion={ConfVersion}")
