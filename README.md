@@ -1,4 +1,4 @@
-==========  JSON LIBRARY - README (v3.0)  ==========
+==========  JSON LIBRARY - README (v3.1)  ==========
 
 DESCRIPTION:
 This library enables easy management of configuration files in Python. 
@@ -6,13 +6,28 @@ JSON data can be loaded directly into a class (cfg.) for easy access.
 The file is automatically saved when changes are made, and backups and reset points can be created.
 
 ------------------------------------------------------------
+NEW IN VERSION 3.1
+------------------------------------------------------------
+**Live Refresh:** Background monitoring for manual file changes.
+
+**Atomic Writes:** Prevents file corruption during crashes or power loss.
+
+**File Locking:** Multi-process safety using cross-platform locking.
+
+**System Header:** Integrated metadata for versioning and state control.
+
+------------------------------------------------------------
 MAIN FEATURES
 ------------------------------------------------------------
-* Auto-Load:    Import keys as a class for easy access.
-* Self-Healing: Automatic repair via .bak files.
-* Security:     Automatic backup before every write operation.
-* Reset:        Enable manual snapshots for config recovery.
-* Data Types:   Supports int, float, str, bool, and None.
+**Auto-Load:**    Import keys as a class for easy access.
+
+**Self-Healing:** Automatic repair via .bak files.
+
+**Security:**     Automatic backup before every write operation.
+
+**Reset:**        Enable manual snapshots for config recovery.
+
+**Data Types:**   Supports int, float, str, bool, and None.
 
 ------------------------------------------------------------
 INSTALLATION & START
@@ -45,6 +60,7 @@ MAIN FUNCTIONS
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
+     - This function reads the header data and sets the options accordingly. 
     - NOTE: Ensure a directory named 'files' exists, or use autoCreate=True in libconfig.
 
 2. filename(filename) [X]
@@ -115,6 +131,22 @@ MAIN FUNCTIONS
     - Checks if a group name or key is on the ignore list.
         - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
         - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
+
+20. check_refresh(interval=5)
+
+    - Starts a background daemon thread to monitor file integrity.
+
+    - Automatically reloads keys into j.cfg if refresh=True is set in libconfig.
+
+21. check_refresh_toggle(cycle=None)
+
+    - Controls the refresh cycle during runtime without killing the thread.
+
+        - cycle=True: Resumes monitoring.
+
+        - cycle=False: Pauses monitoring (Thread enters idle state).
+
+        - cycle=None: Toggles the current state.
         
 
 ------------------------------------------------------------
@@ -131,3 +163,9 @@ To ensure maximum data integrity, the library uses multiple strategys:
 - Self-Healing (Auto-Backup): The library automatically maintains a config.json.bak. If the main file becomes corrupted or unreadable, the load() function automatically restores the last known functional state.
 
 - Manual Snapshots: Users can create dedicated .reset points to freeze a specific configuration state, allowing for a full recovery to that defined baseline at any time.
+
+- Protected System Header (_header):
+Every config includes a reserved metadata section:
+    - ConfVersion: Tracks the configuration schema version.
+    - mode: 'normal' or 'safe_mode' (Safe mode enforces auto-recovery).
+    - locked: 'unlocked', 'soft_lock' (no new keys), or 'hard_lock' (read-only).
