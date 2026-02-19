@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import portalocker
+import datetime
 
 file_Name = 'files/config.json'
 
@@ -17,6 +18,10 @@ config_autoLoad = False
 config_check = False
 passed = True
 MsgtoCons_global = 0
+locked = "unlocked" #unlocked, soft_lock, hard_lock
+refresh = False
+mode = "normal" #normal, safe_mode
+ConfVersion = 1.0
 
 konflikte = []
 
@@ -26,6 +31,8 @@ ignore = {
     '_lock', '_target', '__dict__', '__class__', '__init__', '__getattr__', 
     '__setattr__', '__delattr__', '__members__', '__module__'
 }
+
+donotEdit = {'_header','ConfVersion', 'mode', 'refresh', 'locked', 'check', 'autoLoad', 'autoCreate', 'Print', 'set_reset', 'MsgtoCons'}
 
 class ConfigContainer:
     """A container for all configuration values."""
@@ -39,9 +46,13 @@ def _read(filename=None):
     if filename is not None:
         fileName(filename)
     if health_check():
-        with open(pfad, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data
+        try:
+            with open(pfad, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data
+        except Exception as e:
+            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to read file: {e}")
+            return None
     else:
         if MsgtoCons_global <= 2: print ("[ERROR] File could not be Opened")
         return None
@@ -50,6 +61,10 @@ def _write(daten, filename=None):
 
     if filename is not None:
         fileName(filename)
+
+    if locked == 'hard_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently locked.")
+        return False
     
     ordner = os.path.dirname(pfad)
     if not os.path.exists(ordner) and ordner != '':
@@ -57,6 +72,9 @@ def _write(daten, filename=None):
         return False
 
     fd, temp_pfad = tempfile.mkstemp(dir=ordner, prefix="temp_cfg_", suffix=".json")
+
+    if "_header" in daten:
+        daten["_header"]["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
@@ -73,6 +91,11 @@ def _write(daten, filename=None):
         if os.path.exists(temp_pfad):
             os.remove(temp_pfad)
         return False
+    
+def refrech():
+    """Starts a background thread that periodically checks the file integrity and loads the Keys.
+    It will automatically attempt a recovery if the file is corrupted."""
+    pass
 
 def health_check(autoCreate=None):
     """Checks if the config file exists and creates a new one from the backup if needed."""
@@ -116,28 +139,31 @@ def scan_keys(daten=None):
     """Checks if a group name or key is on the ignore list."""
     if not health_check():
         return False
-    
-    if daten is not None:
-        konflikte = set(daten.keys()) & ignore
-    
-        if konflikte:
-            if MsgtoCons_global <= 2:
-                print(f"[ERROR] Key conflict detected: {konflikte}")
-            return False
-        return True
-    else:
-        _daten = _read()
-    check_failed = False
-    Key_list = []
-    ER_Key_list = []
-    for key in _daten.keys():
-        if key in ignore:
-            konflikte.append(key)
-            if MsgtoCons_global <= 1: print(f"[WARNING] Key conflict detected: '{key}' is a reserved keyword and cannot be used as a variable name.")
-            check_failed = True
-            ER_Key_list.append(key)
+    try:
+        if daten is not None:
+            konflikte = set(daten.keys()) & ignore
+        
+            if konflikte:
+                if MsgtoCons_global <= 2:
+                    print(f"[ERROR] Key conflict detected: {konflikte}")
+                return False
+            return True
         else:
-            Key_list.append(key)
+            _daten = _read()
+        check_failed = False
+        Key_list = []
+        ER_Key_list = []
+        for key in _daten.keys():
+            if key in ignore:
+                konflikte.append(key)
+                if MsgtoCons_global <= 1: print(f"[WARNING] Key conflict detected: '{key}' is a reserved keyword and cannot be used as a variable name.")
+                check_failed = True
+                ER_Key_list.append(key)
+            else:
+                Key_list.append(key)
+    except Exception as e:
+        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to scan keys: {e}")
+        return False
     
     if MsgtoCons_global <= 0: print (f"[INFO] {Key_list} is not a reserved keyword")
     
@@ -161,18 +187,33 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
     """
-    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global
+    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked, refresh, mode, ConfVersion
 
     MsgtoCons_global = MsgtoCons
 
+    MsgtoCons_global = get ("MsgtoCons", group="_header", default=MsgtoCons_global)
+    locked = get ("locked", group="_header", default='unlocked') #unlocked, soft_lock, hard_lock
+    refresh = get ("refresh", group="_header", default=False)
+    mode = get ("mode", group="_header", default="normal") #normal, safe_mode
+    if mode == "safe_mode":
+        refresh = True
+        autoCreate = True
+        autoLoad = True 
+        set_reset = True
+        check = True
+    ConfVersion = get ("ConfVersion", group="_header", default=1.0)
+
+    if MsgtoCons_global <= 0: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked}, refresh={refresh}, mode='{mode}', ConfVersion={ConfVersion}")
+
     if filename is not None and filename is not False:
         fileName(filename)
-
+    
     if autoCreate is not None and autoCreate is not False:
         config_autoCreate = autoCreate
     else:
         config_autoCreate = False
 
+    Print = get ("Print", group="_header", default=Print)
     if Print is not None and Print is not False:
         config_Print = Print
     else:
@@ -367,10 +408,13 @@ def load(autoCreate=None):
     
     scan_keys()
     if health_check(autoCreate=autoCreate):
-        _daten = _read()
-        cfg.__dict__.clear()
-        cfg.__dict__.update(_daten)
-        
+        try:
+            _daten = _read()
+            cfg.__dict__.clear()
+            cfg.__dict__.update(_daten)
+        except Exception as e:
+            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to load config: {e}")
+            return False
         if MsgtoCons_global <= 0: print(f"[INFO] Config file loaded into 'cfg' object.")
         return True
     else:
@@ -399,7 +443,7 @@ def setreset(set_reset=None):
 def show (Print=None):
     """Returns all loaded variable names as a list.
        If set to 'True', output is displayed in the terminal."""
-    variablen = [name for name in cfg.__dict__ if not name.startswith("__")]
+    variablen = [name for name in cfg.__dict__ if not name.startswith("__") and name not in donotEdit]
     if Print or config_Print:
         print (variablen)
     else:
@@ -425,7 +469,14 @@ def dump(new_data, group=None):
     except FileNotFoundError:
         if MsgtoCons_global <= 2: print("[ERROR] File not found.")
         return False
-
+    
+    if group == "_header":
+        if MsgtoCons_global <= 2: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
+        return False
+    elif new_data.keys() & donotEdit:
+        if MsgtoCons_global <= 2: print(f"[ERROR] Attempt to edit reserved keys: {new_data.keys() & donotEdit}.")
+        return False
+    
     success = False
     try:
         if group:
@@ -447,17 +498,21 @@ def dump(new_data, group=None):
                     if MsgtoCons_global <= 0: print(f"[INFO] Update successful: {key} updated.")
                     success = True
                 else:
-                    if MsgtoCons_global <= 0: print(f"[INFO] Key '{key}' ignored (exists not).")
+                    if MsgtoCons_global <= 2: print(f"[ERROR] Key '{key}' does not exist. Use 'add' or 'addlist' to create new keys.")
     except Exception as e:
         if MsgtoCons_global <= 2: print(f"[ERROR] Failed to update: {e}")
         return False
     
     if success:
-        olddaten = _read()
-        olddaten.update(daten)
-        _write(daten)
-        backup()
-        return True
+        try:
+            olddaten = _read()
+            olddaten.update(daten)
+            _write(daten)
+            backup()
+            return True
+        except Exception as e:
+            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to write updated data: {e}")
+            return False
     
     return False
 
@@ -468,10 +523,13 @@ def edit(Var, Val, group=None):
         return False
     
     try:
-        if Var == "/?":
-            show(True)
-            return True
-
+        if Var in donotEdit:
+            if MsgtoCons_global <= 2: print(f"[ERROR] '{Var}' is a Header attribute and cannot be edited.")
+            return False
+        elif group == "_header":
+            if MsgtoCons_global <= 2: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
+            return False
+        
         if group:
             payload = {group: {Var: Val}} 
         else:
@@ -509,8 +567,12 @@ def add(Varname,Varvalue):
     if not health_check():
         return False
     
+    if locked == 'soft_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
+        return False
+    
     for a in ignore:
-        if Varname == a:
+        if Varname == a or Varname in donotEdit:
             if MsgtoCons_global <= 2: print(f"[ERROR] '{Varname}' is a reserved keyword and cannot be used as a variable name.")
             return False
     newVardata = {Varname: Varvalue}
@@ -531,10 +593,13 @@ def addlist(newVarlist):
     if not health_check():
         return False
 
-    for a in ignore:
-        if a in newVarlist:
-            if MsgtoCons_global <= 2: print(f"[ERROR] '{a}' is a reserved keyword and cannot be used as a variable name.")
-            return False
+    if locked == 'soft_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
+        return False
+    
+    if newVarlist.keys() & ignore or newVarlist.keys() & donotEdit:
+        if MsgtoCons_global <= 2: print(f"[ERROR] '{newVarlist.keys() & ignore}{newVarlist.keys() & donotEdit}' is a reserved keyword and cannot be used as a variable name.")
+        return False
         
     daten = _read()
 
@@ -549,11 +614,18 @@ def delete(name):
     """Permanently deletes a data point from the file and memory."""
     if not health_check():
         return False
+    
+    if locked == 'soft_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added or deleted.")
+        return False
 
     try:
         daten = _read()
         
         if name in daten:
+            if name in donotEdit:
+                if MsgtoCons_global <= 2: print(f"[ERROR] '{name}' is a reserved keyword and cannot be deleted.")
+                return False
             del daten[name]
             _write(daten)
             
@@ -621,6 +693,10 @@ def getAll():
 
 def reset():
     """Restores the config file from the .reset backup."""
+    if locked == 'soft_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked and cannot be reset.")
+        return False
+
     try:
         if os.path.exists(reset_pfad):
             if os.path.exists(pfad):
@@ -675,6 +751,17 @@ def renameGroup(old_name, new_name):
     if not health_check():
         return False
     
+    if locked == 'soft_lock':
+        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be renamed.")
+        return False
+    
+    if new_name in ignore or new_name in donotEdit:
+        if MsgtoCons_global <= 2: print(f"[ERROR] '{new_name}' is a reserved keyword and cannot be used as a group name.")
+        return False
+    elif old_name in ignore or old_name in donotEdit:
+        if MsgtoCons_global <= 2: print(f"[ERROR] '{old_name}' is a reserved keyword and cannot be changed.")
+        return False
+    
     try:
         backup()
         daten = _read()
@@ -711,10 +798,19 @@ def compare (Filename1=None,Filename2=None):
         file2_pfad = reset_pfad
     else:
         file2_pfad = os.path.join(os.path.dirname(__file__), Filename2)
-
-    confjson = _read(file1_pfad)
     
-    resetjson = _read(file2_pfad)
+    try:
+        confjson = _read(file1_pfad)
+        
+        resetjson = _read(file2_pfad)
+
+        dif = confjson.keys() ^ resetjson.keys()
+
+    except Exception as e:
+        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to compare files: {e}")
+        return False
+
+    if MsgtoCons_global <= 0 and dif: print(f"[INFO] The following keys differ between the two files: {dif}")
 
     if confjson == resetjson:
         return True
