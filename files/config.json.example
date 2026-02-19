@@ -1,15 +1,12 @@
 { 
     "_header": {
         "ConfVersion": "3.0",
-        "mode": "production",
+        "mode": "safe_mode",
         "refresh": true,
-        "locked": true,
-        "check": null,
-        "autoLoad": null,
-        "autoCreate": null,
+        "locked": "soft_lock",
         "Print": null,
-        "set_reset": null,
-        "MsgtoCons": 3
+        "MsgtoCons": 1,
+        "last_updated": "2026-02-19 17:18:40"
     },
     "SystemName": "Central_01",
     "Version": 2.1,
