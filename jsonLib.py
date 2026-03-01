@@ -134,6 +134,7 @@ def check_refresh(interval=5):
 
 def health_check(autoCreate=None):
     """Checks if the config file exists and creates a new one from the backup if needed."""
+    global backup_pfad
     if not os.path.exists(pfad):
         if autoCreate or config_autoCreate:
             if os.path.exists(backup_pfad):
@@ -141,7 +142,18 @@ def health_check(autoCreate=None):
                 if MsgtoCons_global <= 0: print("[INFO] Config has been restored from backup!")
                 return True
             else:
-                standard_daten = {"Version": 1.0}
+                standard_daten = {
+                    "_header": {
+                        "ConfVersion": "1.0",
+                        "mode": "normal",
+                        "refresh": True,
+                        "locked": "unlocked",
+                        "Print": None,
+                        "MsgtoCons": 0,
+                        "last_updated": "2000-01-01 00:00:00"
+                    },
+                    "Version": 1.0
+                    }
                 _write (standard_daten)
                 return True
         return False
