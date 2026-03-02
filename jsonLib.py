@@ -368,17 +368,17 @@ def versCheck (Vers):
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Version not Found. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
         lockdown = True
         return False
-    elif ConfVersion != Vers:
-        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Config Version dose not match. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
-        lockdown = True
-        return False
     elif Vers == "unlock":
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library is now Unlocked""")
         lockdown = False
         return True
+    elif ConfVersion != Vers:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Config Version dose not match. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
+        lockdown = True
+        return False
     else:
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library version matches required version.""")
-        lockdown = True
+        lockdown = False
         return True
     
 
