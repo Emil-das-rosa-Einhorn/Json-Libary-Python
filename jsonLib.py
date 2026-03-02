@@ -26,6 +26,7 @@ mode = "normal" #normal, safe_mode
 ConfVersion = 1.0
 refresh_cycle = False
 refresh_alive = False
+lockdown = False
 
 konflikte = []
 
@@ -47,6 +48,10 @@ cfg = ConfigContainer()
 
 def _read(filename=None):
     """Reads the config file and returns the raw content."""
+
+    if lockdown:
+        return False
+    
     if filename is not None:
         fileName(filename)
     if health_check():
@@ -55,24 +60,27 @@ def _read(filename=None):
                 data = json.load(f)
             return data
         except Exception as e:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to read file: {e}")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to read file: {e}")
             return None
     else:
-        if MsgtoCons_global <= 2: print ("[ERROR] File could not be Opened")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("[ERROR] File could not be Opened")
         return None
 
 def _write(daten, filename=None):
+
+    if lockdown:
+        return False
 
     if filename is not None:
         fileName(filename)
 
     if locked == 'hard_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently locked.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently locked.")
         return False
     
     ordner = os.path.dirname(pfad)
     if not os.path.exists(ordner) and ordner != '':
-        if MsgtoCons_global <= 2: print ("[ERROR] Directory does not exist. Please create the directory or specify a valid path.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("[ERROR] Directory does not exist. Please create the directory or specify a valid path.")
         return False
 
     fd, temp_pfad = tempfile.mkstemp(dir=ordner, prefix="temp_cfg_", suffix=".json")
@@ -101,32 +109,35 @@ def check_refresh_toggle(cycle=None):
     global refresh_cycle
     if cycle:
         refresh_cycle = True
-        if MsgtoCons_global <= 0: print("[INFO] Refresh cycle enabled.")
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Refresh cycle enabled.")
     elif cycle is None:
         refresh_cycle = not refresh_cycle
         if refresh_cycle:
-            if MsgtoCons_global <= 0: print("[INFO] Refresh cycle enabled.")
+            if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Refresh cycle enabled.")
         else:
-            if MsgtoCons_global <= 0: print("[INFO] Refresh cycle disabled.")
+            if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Refresh cycle disabled.")
     else:
         refresh_cycle = False
-        if MsgtoCons_global <= 0: print("[INFO] Refresh cycle disabled.")
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Refresh cycle disabled.")
 
 def check_refresh(interval=5):
     """Starts a background thread that periodically checks the file integrity and loads the Keys.
     It will automatically attempt a recovery if the file is corrupted."""
+    if lockdown:
+        return False
+    
     global refresh_alive
     def run_check():
         while True:
             time.sleep(interval)
             if refresh_cycle:
                 if not health_check():
-                    if MsgtoCons_global <= 1:
+                    if MsgtoCons_global <= 1 or MsgtoCons_global == 5:
                         print("[WARNING] File integrity issue detected and handled.")
                 else:
                     if refresh:
                         load()
-                        if MsgtoCons_global <= 0: print(f"[INFO] File loaded successfully.")
+                        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] File loaded successfully.")
     if not refresh_alive:
         refresh_alive = True
         thread = threading.Thread(target=run_check, daemon=True)
@@ -134,17 +145,21 @@ def check_refresh(interval=5):
 
 def health_check(autoCreate=None):
     """Checks if the config file exists and creates a new one from the backup if needed."""
+
+    if lockdown:
+        return False
+    
     global backup_pfad
     if not os.path.exists(pfad):
         if autoCreate or config_autoCreate:
             if os.path.exists(backup_pfad):
                 os.rename(backup_pfad, pfad)     
-                if MsgtoCons_global <= 0: print("[INFO] Config has been restored from backup!")
+                if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Config has been restored from backup!")
                 return True
             else:
                 standard_daten = {
                     "_header": {
-                        "ConfVersion": "1.0",
+                        "ConfVersion": 1.0,
                         "mode": "normal",
                         "refresh": True,
                         "locked": "unlocked",
@@ -165,7 +180,7 @@ def health_check(autoCreate=None):
 
     except (json.JSONDecodeError, ValueError):
         if autoCreate or config_autoCreate:
-            if MsgtoCons_global <= 1: print("[WARNING] Config file corrupted! Attempting to load backup...")
+            if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARNING] Config file corrupted! Attempting to load backup...")
             
             backup_pfad = pfad + ".bak"
             
@@ -173,17 +188,21 @@ def health_check(autoCreate=None):
                 os.remove(pfad)
                 os.rename(backup_pfad, pfad)
                 
-                if MsgtoCons_global <= 0: print("[INFO] Config has been restored from backup!")
+                if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Config has been restored from backup!")
                 return True
             else:
-                if MsgtoCons_global <= 2: print("[ERROR] No backup available. Recovery failed.")
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] No backup available. Recovery failed.")
                 return False
         else:
-            if MsgtoCons_global <= 2: print ("[ERROR] Configuration restore from backup is disabled.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("[ERROR] Configuration restore from backup is disabled.")
             return False
 
 def scan_keys(daten=None):
     """Checks if a group name or key is on the ignore list."""
+
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
     try:
@@ -191,7 +210,7 @@ def scan_keys(daten=None):
             konflikte = set(daten.keys()) & ignore
         
             if konflikte:
-                if MsgtoCons_global <= 2:
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6:
                     print(f"[ERROR] Key conflict detected: {konflikte}")
                 return False
             return True
@@ -203,23 +222,23 @@ def scan_keys(daten=None):
         for key in _daten.keys():
             if key in ignore:
                 konflikte.append(key)
-                if MsgtoCons_global <= 1: print(f"[WARNING] Key conflict detected: '{key}' is a reserved keyword and cannot be used as a variable name.")
+                if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print(f"[WARNING] Key conflict detected: '{key}' is a reserved keyword and cannot be used as a variable name.")
                 check_failed = True
                 ER_Key_list.append(key)
             else:
                 Key_list.append(key)
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to scan keys: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to scan keys: {e}")
         return False
     
-    if MsgtoCons_global <= 0: print (f"[INFO] {Key_list} is not a reserved keyword")
+    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] {Key_list} is not a reserved keyword")
     
     if check_failed:
         return False
     else:
         return True
 
-def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0):
+def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0, Vers=None):
     """
        Configures the library settings.
         - check=True/None: Enables/disables config file existence check on initialization.
@@ -233,8 +252,29 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
+          - MsgtoCons="INFO": Only Info mesages
+          - MsgtoCons="WARNING": Only WARNING mesages
+          - MsgtoCons="ERROR": Only ERROR mesages
+
     """
     global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked, refresh, mode, ConfVersion
+
+    try:
+        MsgtoCons_int = int(MsgtoCons)
+        if 0 <= MsgtoCons_int <= 3:
+            MsgtoCons = MsgtoCons_int
+        else:
+            MsgtoCons = 0
+
+    except ValueError:
+        if MsgtoCons == "INFO":
+            MsgtoCons = 4
+        elif MsgtoCons == "WARNING":
+            MsgtoCons = 5
+        elif MsgtoCons == "ERROR":
+            MsgtoCons = 6
+        else:
+            MsgtoCons = 0
 
     MsgtoCons_global = MsgtoCons
 
@@ -253,7 +293,10 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
         
     ConfVersion = get ("ConfVersion", group="_header", default=1.0)
 
-    if MsgtoCons_global <= 0: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked}, refresh={refresh}, mode='{mode}', ConfVersion={ConfVersion}")
+    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked}, refresh={refresh}, mode='{mode}', ConfVersion={ConfVersion}")
+
+    if Vers is not None:
+        versCheck(Vers)
 
     if filename is not None and filename is not False:
         fileName(filename)
@@ -294,30 +337,57 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
             passed = True
         else:
             if config_autoLoad:
-                if MsgtoCons_global <= 0: print("[INFO] Auto loading config...")
+                if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Auto loading config...")
                 load()
                 if os.path.exists(pfad):
                     passed = True
                 else:
-                    if MsgtoCons_global <= 2:print("[ERROR] No Config found and unable to auto load! Please create a config file or disable 'Config check' in libconfig.")
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6:print("[ERROR] No Config found and unable to auto load! Please create a config file or disable 'Config check' in libconfig.")
                     passed = False
             else:
-                if MsgtoCons_global <= 2: print("[ERROR] No Config found! Please create a config file or disable 'Config check' in libconfig.")
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] No Config found! Please create a config file or disable 'Config check' in libconfig.")
                 passed = False
     
     if not setreset():
         if not config_set_reset:
-            if MsgtoCons_global <= 1: print ("[WARNING] 'Set reset point' is disabled.")
+            if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print ("[WARNING] 'Set reset point' is disabled.")
             if passed:
                 pass
         else:
-            if MsgtoCons_global <= 1: print ("[WARNING] Could not set reset point. Ensure that the config file exists or 'Set reset point' is enabled.")
+            if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print ("[WARNING] Could not set reset point. Ensure that the config file exists or 'Set reset point' is enabled.")
             passed = False
         
     return passed
 
+def versCheck (Vers):
+    """Checks if the config version matches the required version"""
+
+    global lockdown
+    ConfVersion = get ("ConfVersion", group="_header")
+    if ConfVersion is None:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Version not Found. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
+        lockdown = True
+        return False
+    elif ConfVersion != Vers:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Config Version dose not match. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
+        lockdown = True
+        return False
+    elif Vers == "unlock":
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library is now Unlocked""")
+        lockdown = False
+        return True
+    else:
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library version matches required version.""")
+        lockdown = True
+        return True
+    
+
 def fileName(filename):
     """Sets the name of the config file."""
+
+    if lockdown:
+        return False
+    
     global pfad, backup_pfad, reset_pfad
     pfad = os.path.join(os.path.dirname(__file__), filename)
     backup_pfad = pfad + ".bak"
@@ -357,6 +427,9 @@ def info():
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
+          - MsgtoCons="INFO": Only Info mesages
+          - MsgtoCons="WARNING": Only WARNING mesages
+          - MsgtoCons="ERROR": Only ERROR mesages
 
     2. fileName(filename)
        Sets the name of the config file.
@@ -427,10 +500,22 @@ def info():
         set config file and the Config.reset file
 
     19. scan_keys(daten=None) [X]
-       Checks if a group name or key is on the ignore list.
+        Checks if a group name or key is on the ignore list.
         - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
         - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
-        
+    
+    20. check_refresh(interval=5)
+        - Starts a background daemon thread to monitor file integrity.
+        - Automatically reloads keys into j.cfg if refresh=True is set in libconfig.
+
+    21. check_refresh_toggle(cycle=None)
+        Controls the refresh cycle during runtime without killing the thread.
+        - cycle=True: Resumes monitoring.
+        - cycle=False: Pauses monitoring (Thread enters idle state).
+        - cycle=None: Toggles the current state.
+
+    22. versCheck (Vers):
+        Checks if the config version matches the required version
 
     CONTROLS & SECURITY:
     - The delete function permanently removes data from the config file.
@@ -443,6 +528,10 @@ def info():
 
 def backup():
     """Creates a backup/current state of the config file (Config.json.bak)"""
+
+    if lockdown:
+        return False
+    
     if os.path.exists(pfad):
         shutil.copy(pfad, pfad + ".bak")
         return True
@@ -456,6 +545,9 @@ def load(autoCreate=None):
        - Should the config file be corrupted, the function 
          attempts to restore the file from the backup."""
     
+    if lockdown:
+        return False
+    
     scan_keys()
     if health_check(autoCreate=autoCreate):
         try:
@@ -463,9 +555,9 @@ def load(autoCreate=None):
             cfg.__dict__.clear()
             cfg.__dict__.update(_daten)
         except Exception as e:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to load config: {e}")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to load config: {e}")
             return False
-        if MsgtoCons_global <= 0: print(f"[INFO] Config file loaded into 'cfg' object.")
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Config file loaded into 'cfg' object.")
         return True
     else:
         return False
@@ -475,17 +567,21 @@ def setreset(set_reset=None):
     Sets a reset point by creating a .reset backup of the current config file.
          - set_reset=True/None: Enables/disables the ability to set reset points.
     """
+
+    if lockdown:
+        return False
+    
     if config_set_reset or set_reset:
         if not health_check():
             return False
         try:
             if os.path.exists(pfad):
                 shutil.copy(pfad, pfad + ".reset")
-                if MsgtoCons_global <= 0: print(f"[INFO] Reset point set successfully. Reset point saved as '{reset_pfad}'")
+                if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Reset point set successfully. Reset point saved as '{reset_pfad}'")
                 return True
             return False
         except Exception as e:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to set reset point: {e}")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to set reset point: {e}")
             return False
     else:
         return False
@@ -493,6 +589,10 @@ def setreset(set_reset=None):
 def show (Print=None):
     """Returns all loaded variable names as a list.
        If set to 'True', output is displayed in the terminal."""
+    
+    if lockdown:
+        return False
+    
     variablen = [name for name in cfg.__dict__ if not name.startswith("__") and name not in donotEdit]
     if Print or config_Print:
         print (variablen)
@@ -503,6 +603,9 @@ def show (Print=None):
 def dump(new_data, group=None):
     """ Updates EXISTING values in the JSON. 
        Prevents accidental creation of new keys."""
+    
+    if lockdown:
+        return False
     
     if not health_check():
         return False
@@ -517,14 +620,14 @@ def dump(new_data, group=None):
     try:
         daten = _read()
     except FileNotFoundError:
-        if MsgtoCons_global <= 2: print("[ERROR] File not found.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] File not found.")
         return False
     
     if group == "_header":
-        if MsgtoCons_global <= 2: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
         return False
     elif new_data.keys() & donotEdit:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Attempt to edit reserved keys: {new_data.keys() & donotEdit}.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Attempt to edit reserved keys: {new_data.keys() & donotEdit}.")
         return False
     
     success = False
@@ -534,23 +637,23 @@ def dump(new_data, group=None):
                 for key, wert in new_data[group].items():
                     if key in daten[group]:
                         daten[group][key] = wert
-                        if MsgtoCons_global <= 0: print(f"[INFO] Update in '{group}': {key} updated.")
+                        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Update in '{group}': {key} updated.")
                         success = True
                     else:
-                        if MsgtoCons_global <= 2: print(f"[ERROR] Key '{key}' not found in group '{group}'.")
+                        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Key '{key}' not found in group '{group}'.")
             else:
-                if MsgtoCons_global <= 2: print(f"[ERROR] Group '{group}' does not exist.")
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Group '{group}' does not exist.")
                 return False
         else:
             for key, wert in new_data.items():
                 if key in daten:
                     daten[key] = wert
-                    if MsgtoCons_global <= 0: print(f"[INFO] Update successful: {key} updated.")
+                    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Update successful: {key} updated.")
                     success = True
                 else:
-                    if MsgtoCons_global <= 2: print(f"[ERROR] Key '{key}' does not exist. Use 'add' or 'addlist' to create new keys.")
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Key '{key}' does not exist. Use 'add' or 'addlist' to create new keys.")
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to update: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to update: {e}")
         return False
     
     if success:
@@ -561,7 +664,7 @@ def dump(new_data, group=None):
             backup()
             return True
         except Exception as e:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Failed to write updated data: {e}")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to write updated data: {e}")
             return False
     
     return False
@@ -569,15 +672,18 @@ def dump(new_data, group=None):
 def edit(Var, Val, group=None):
     """Changes an EXISTING value directly via code."""
 
+    if lockdown:
+        return False
+
     if not health_check():
         return False
     
     try:
         if Var in donotEdit:
-            if MsgtoCons_global <= 2: print(f"[ERROR] '{Var}' is a Header attribute and cannot be edited.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{Var}' is a Header attribute and cannot be edited.")
             return False
         elif group == "_header":
-            if MsgtoCons_global <= 2: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] The '_header' group is reserved and cannot be edited.")
             return False
         
         if group:
@@ -588,11 +694,15 @@ def edit(Var, Val, group=None):
         return dump(payload, group=group)
 
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] {e}")
         return False
 
 def search (Varsearch):
     """Checks if a variable exists in the config (True/False)."""
+
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
     
@@ -614,16 +724,19 @@ def search (Varsearch):
 def add(Varname,Varvalue):
     """Creates a NEW data point in the JSON file."""
 
+    if lockdown:
+        return False
+
     if not health_check():
         return False
     
     if locked == 'soft_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
         return False
     
     for a in ignore:
         if Varname == a or Varname in donotEdit:
-            if MsgtoCons_global <= 2: print(f"[ERROR] '{Varname}' is a reserved keyword and cannot be used as a variable name.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{Varname}' is a reserved keyword and cannot be used as a variable name.")
             return False
     newVardata = {Varname: Varvalue}
 
@@ -633,22 +746,26 @@ def add(Varname,Varvalue):
 
     _write(daten)
     
-    if MsgtoCons_global <= 0: print(f"Update successful: {list(newVardata.keys())} updated.")
+    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"Update successful: {list(newVardata.keys())} updated.")
     backup()
     return True
 
 def addlist(newVarlist):
     """Adds multiple NEW data points simultaneously.
        Example: j.addlist({"D1": 10, "D2": 20})"""
+    
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
 
     if locked == 'soft_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
         return False
     
     if newVarlist.keys() & ignore or newVarlist.keys() & donotEdit:
-        if MsgtoCons_global <= 2: print(f"[ERROR] '{newVarlist.keys() & ignore}{newVarlist.keys() & donotEdit}' is a reserved keyword and cannot be used as a variable name.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{newVarlist.keys() & ignore}{newVarlist.keys() & donotEdit}' is a reserved keyword and cannot be used as a variable name.")
         return False
         
     daten = _read()
@@ -657,16 +774,20 @@ def addlist(newVarlist):
 
     _write(daten)
     
-    if MsgtoCons_global <= 0: print(f"Update successful: {list(newVarlist.keys())} updated.")
+    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"Update successful: {list(newVarlist.keys())} updated.")
     return True
 
 def delete(name):
     """Permanently deletes a data point from the file and memory."""
+
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
     
     if locked == 'soft_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be added or deleted.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added or deleted.")
         return False
 
     try:
@@ -674,7 +795,7 @@ def delete(name):
         
         if name in daten:
             if name in donotEdit:
-                if MsgtoCons_global <= 2: print(f"[ERROR] '{name}' is a reserved keyword and cannot be deleted.")
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{name}' is a reserved keyword and cannot be deleted.")
                 return False
             del daten[name]
             _write(daten)
@@ -682,15 +803,15 @@ def delete(name):
             if hasattr(cfg, name): 
                 delattr(cfg, name)
                 
-            if MsgtoCons_global <= 0: print(f"[INFO] '{name}' deleted successfully.")
+            if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] '{name}' deleted successfully.")
             backup ()
             return True
         else:
-            if MsgtoCons_global <= 2: print(f"[ERROR] '{name}' does not exist and cannot be deleted.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{name}' does not exist and cannot be deleted.")
             return False
             
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to delete: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to delete: {e}")
         return False
     
 def get(key, group=None, default=None):
@@ -699,6 +820,10 @@ def get(key, group=None, default=None):
         - The Key is the name of the data point to retrieve.
         - The Group (optional) specifies a subgroup within the JSON structure.
         - The DefaultValue (optional) is used if "Name" is not in the config file."""
+    
+    if lockdown:
+        return False
+    
     try:
         daten = _read()
 
@@ -727,24 +852,32 @@ def get(key, group=None, default=None):
         return wert
 
     except Exception as e:
-        if MsgtoCons_global <= 3: print(f"[ERROR] get failed for '{key}': {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] get failed for '{key}': {e}")
         return default
     
 def getAll():
     """Returns all data points in the config file as a dictionary."""
+
+    if lockdown:
+        return False
+    
     health_check()
     backup()
     try:
         data = _read()
         return data
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] getAll failed: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] getAll failed: {e}")
         return None
 
 def reset():
     """Restores the config file from the .reset backup."""
+
+    if lockdown:
+        return False
+    
     if locked == 'soft_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked and cannot be reset.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked and cannot be reset.")
         return False
 
     try:
@@ -754,29 +887,33 @@ def reset():
             os.rename(reset_pfad, pfad)
             setreset()
             load()
-            if MsgtoCons_global <= 0: print("[INFO] Config has been restored and loaded from .reset!")
+            if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print("[INFO] Config has been restored and loaded from .reset!")
             return True
         else:
-            if MsgtoCons_global <= 2: print("[ERROR] No reset file found. Reset failed.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] No reset file found. Reset failed.")
             return False
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to reset configuration: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to reset configuration: {e}")
         return False
     
 def validate(Var, Valmin, Valmax=None):
     """Validates if a variable meets specified conditions.
         - For numerical values, both minimum and maximum can be set.
         - For boolean or None values, only Valmin is required."""
+    
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
     
     current_val = get(Var)
 
     if current_val is None:
-        if MsgtoCons_global <= 2: print(f"[ERROR] The variable '{Var}' does not exist.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] The variable '{Var}' does not exist.")
         return False
     if Valmax is not None and isinstance(Valmax, (bool, str, type(None))):
-        if MsgtoCons_global <= 2: print("[ERROR] Valmax must be a number.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] Valmax must be a number.")
         return False
     if not isinstance(Valmin, (bool, type(None))):
         if isinstance(Valmin, (int, float)):
@@ -798,18 +935,22 @@ def validate(Var, Valmin, Valmax=None):
         
 def renameGroup(old_name, new_name):
     """Renames a Group or Key."""
+
+    if lockdown:
+        return False
+    
     if not health_check():
         return False
     
     if locked == 'soft_lock':
-        if MsgtoCons_global <= 1: print("[WARRNING] File is currently soft-locked. Keys cannot be renamed.")
+        if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be renamed.")
         return False
     
     if new_name in ignore or new_name in donotEdit:
-        if MsgtoCons_global <= 2: print(f"[ERROR] '{new_name}' is a reserved keyword and cannot be used as a group name.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{new_name}' is a reserved keyword and cannot be used as a group name.")
         return False
     elif old_name in ignore or old_name in donotEdit:
-        if MsgtoCons_global <= 2: print(f"[ERROR] '{old_name}' is a reserved keyword and cannot be changed.")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] '{old_name}' is a reserved keyword and cannot be changed.")
         return False
     
     try:
@@ -817,27 +958,30 @@ def renameGroup(old_name, new_name):
         daten = _read()
 
         if new_name in daten:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Group '{new_name}' already exists.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Group '{new_name}' already exists.")
             return False
         if old_name in daten:
             daten[new_name] = daten.pop(old_name)
             
             _write(daten)
             
-            if MsgtoCons_global <= 0: print(f"[SUCCESS] Group '{old_name}' renamed to '{new_name}'")
+            if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[SUCCESS] Group '{old_name}' renamed to '{new_name}'")
             return True
         else:
-            if MsgtoCons_global <= 2: print(f"[ERROR] Group '{old_name}' not found.")
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Group '{old_name}' not found.")
             return False
             
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] {e}")
         return False
     
 def compare (Filename1=None,Filename2=None):
     """lets you compare the content of two files.
         if no file name is given the function will compare the 
         set config file and the Config.reset file"""
+    
+    if lockdown:
+        return False
     
     if Filename1 == None:
         file1_pfad = pfad
@@ -857,7 +1001,7 @@ def compare (Filename1=None,Filename2=None):
         dif = confjson.keys() ^ resetjson.keys()
 
     except Exception as e:
-        if MsgtoCons_global <= 2: print(f"[ERROR] Failed to compare files: {e}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Failed to compare files: {e}")
         return False
 
     if MsgtoCons_global <= 0 and dif: print(f"[INFO] The following keys differ between the two files: {dif}")

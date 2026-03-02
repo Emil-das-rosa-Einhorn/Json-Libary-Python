@@ -60,6 +60,9 @@ MAIN FUNCTIONS
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
+          - MsgtoCons="INFO": Only [Info] mesages
+          - MsgtoCons="WARNING": Only [WARNING] mesages
+          - MsgtoCons="ERROR": Only [ERROR] mesages
      - This function reads the header data and sets the options accordingly. 
     - NOTE: Ensure a directory named 'files' exists, or use autoCreate=True in libconfig.
 
@@ -147,6 +150,9 @@ MAIN FUNCTIONS
         - cycle=False: Pauses monitoring (Thread enters idle state).
 
         - cycle=None: Toggles the current state.
+
+22. versCheck (Vers):
+    - Checks if the config version matches the required version
         
 
 ------------------------------------------------------------

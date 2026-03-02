@@ -1,6 +1,6 @@
 { 
     "_header": {
-        "ConfVersion": "3.0",
+        "ConfVersion": 3.0,
         "mode": "safe_mode",
         "refresh": true,
         "locked": "soft_lock",
