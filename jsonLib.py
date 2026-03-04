@@ -453,7 +453,7 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
             mode = "unlocked"
     
     if refresh is not None:
-        if refresh is not isinstance(refresh,bool):
+        if refresh not isinstance(refresh,bool):
             refresh = False
 
     MsgtoCons_global = get ("MsgtoCons", group="_header", default=MsgtoCons)
