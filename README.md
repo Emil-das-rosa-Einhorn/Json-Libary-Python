@@ -46,8 +46,10 @@ MAIN FUNCTIONS
 [Functions marked with [X] return 'True' if executed 
     successfully and 'False' upon failure]
 
-1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None,fileName="Filename"/None MsgtoCons=0-3) [X]
+1. libconfig(setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None) [X]
    - Configures the library settings.
+      - setup=None/dict: Enables you to send all config variables as a dict
+         - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None} 
       - check=True/None: Enables/disables config file existence check on initialization.
       - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
          - This option is True on default
@@ -63,8 +65,14 @@ MAIN FUNCTIONS
           - MsgtoCons="INFO": Only [Info] mesages
           - MsgtoCons="WARNING": Only [WARNING] mesages
           - MsgtoCons="ERROR": Only [ERROR] mesages
+      - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
+              If the version does not match, the library enters lockdown mode.
+          - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
+          - Vers=1.0/None: Sets the exact supported config version.
+          - VersHi=1.0/None: Sets the highest supported config version.
+          - VersLow=1.0/None: Sets the lowest supported config version.
      - This function reads the header data and sets the options accordingly. 
-    - NOTE: Ensure a directory named 'files' exists, or use autoCreate=True in libconfig.
+     - NOTE: Ensure a directory named 'files' exists, or use autoCreate=True in libconfig.
 
 2. filename(filename) [X]
     - Sets the name of the config file.
@@ -151,9 +159,13 @@ MAIN FUNCTIONS
 
         - cycle=None: Toggles the current state.
 
-22. versCheck (Vers):
-    - Checks if the config version matches the required version
-        
+22. versCheck (Vers,VersHi,VersLow):
+    - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
+            If the version does not match, the library enters lockdown mode.
+        - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
+        - Vers=1.0/None: Sets the exact supported config version.
+        - VersHi=1.0/None: Sets the highest supported config version.
+        - VersLow=1.0/None: Sets the lowest supported config version.        
 
 ------------------------------------------------------------
 DATA SECURITY (.bak/.reset)

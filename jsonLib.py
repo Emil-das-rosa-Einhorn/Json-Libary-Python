@@ -20,9 +20,9 @@ config_autoLoad = False
 config_check = False
 passed = True
 MsgtoCons_global = 0
-locked = "unlocked" #unlocked, soft_lock, hard_lock
-refresh = False
-mode = "normal" #normal, safe_mode
+locked_global= "unlocked" #unlocked, soft_lock, hard_lock
+refresh_global= False
+mode_global = "normal" #normal, safe_mode
 ConfVersion = 1.0
 refresh_cycle = False
 refresh_alive = False
@@ -45,6 +45,148 @@ class ConfigContainer:
         return None
 
 cfg = ConfigContainer()
+
+def info():
+    
+    header = """
+    ============================================================
+    JSON LIBRARY - DOCUMENTATION (v3.1)
+    ============================================================
+
+    """
+    
+    config_info = f"Config Path: {pfad}"
+
+    functions = """
+
+    AVAILABLE FUNCTIONS:
+    [Functions marked with [X] return 'True' if executed 
+    successfully and 'False' upon failure]
+
+    1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None, filename="Filename"/None, MsgtoCons=0-3) [X]
+       Configures the library settings.
+        - setup=None/dict: Enables you to send all config variables as a dict
+          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None} 
+        - check=True/None: Enables/disables config file existence check on initialization.
+        - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
+        - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
+        - Print=True/None: Enables/disables terminal output
+        - set_reset=True/None: Enables/disables the ability to set reset points.
+        - fileName="Filename"/None: Sets a custom name for the Json file.
+        - MsgtoCons=0-3 controls which messages are printed to the console.
+          - MsgtoCons=0: All messages are printed.
+          - MsgtoCons=1: [WARNING] & [ERROR] are printed.
+          - MsgtoCons=2: [ERROR] is printed.
+          - MsgtoCons=3: No messages are printed.
+          - MsgtoCons="INFO": Only Info mesages
+          - MsgtoCons="WARNING": Only WARNING mesages
+          - MsgtoCons="ERROR": Only ERROR mesages
+        - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
+                If the version does not match, the library enters lockdown mode.
+          - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
+          - Vers=1.0/None: Sets the exact supported config version.
+          - VersHi=1.0/None: Sets the highest supported config version.
+          - VersLow=1.0/None: Sets the lowest supported config version.
+
+    2. fileName(filename)
+       Sets the name of the config file.
+
+    3. setreset(set_reset=TrueNone) [X]
+       Sets a reset point by creating a .reset backup of the current config file.
+         - set_reset=True/None: Enables/disables the ability to set reset points.
+    
+    4. reset() [X]
+       Restores the config file from the .reset backup.
+    
+    5. load(autoCreate=True/None) [X]
+       Loads JSON data into global memory.
+       - autoCreate=True: Creates a base config if none exists 
+         or restors it form the Backup.
+         If the argument is omitted, no config file is created.
+       - Should the config file be corrupted, the function 
+         attempts to restore the file from the backup.
+
+    6. show(Print=True/None)
+       Returns all loaded variable names as a list.
+       If set to 'True', output is displayed in the terminal.
+
+    7. edit(Var, Val,group="name"/None) [X]
+       Changes an EXISTING value directly via code. 
+
+    8. dump(dict) [X]
+       Updates EXISTING values in the JSON. 
+       Prevents accidental creation of new keys.
+
+    9. add(Varname, Varvalue) [X]
+       Creates a NEW data point in the JSON file.
+
+    10. addlist(dict) [X]
+       Adds multiple NEW data points simultaneously.
+       Example: j.addlist({"D1": 10, "D2": 20})
+
+    11. search(Varname) [X]
+       Checks if a variable exists in the config (True/False).
+
+    12. delete(name) [X]
+       Permanently deletes a data point from the file and memory.
+
+    13. backup() [X]
+        Creates a backup/current state of the config file (Config.json.bak)
+
+    14. get(key, group=None, default=None)
+        Secure data access.
+        - I = jsonBib.get("Name", group="group", default="DefaultValue")
+        - The Key is the name of the data point to retrieve.
+        - The Group (optional) specifies a subgroup within the JSON structure.
+        - The DefaultValue (optional) is used if "Name" is not in the config file.
+
+    15. getAll()
+        Returns all data points in the config file as a dictionary.
+
+    16. validate(Var, Valmin, Valmax=None) [X]
+        Validates if a variable meets specified conditions.
+        - For numerical values, both minimum and maximum can be set.
+        - For boolean or None values, only Valmin is required.
+    
+    17. renameGroup(old_name, new_name) [X]
+        Renames a Group or Key.
+
+    18. compare (Filename1=None,Filename2=None) [X]
+        lets you compare the content of two files.
+        if no file name is given the function will compare the 
+        set config file and the Config.reset file
+
+    19. scan_keys(daten=None) [X]
+        Checks if a group name or key is on the ignore list.
+        - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
+        - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
+    
+    20. check_refresh(interval=5)
+        - Starts a background daemon thread to monitor file integrity.
+        - Automatically reloads keys into j.cfg if refresh=True is set in libconfig.
+
+    21. check_refresh_toggle(cycle=None)
+        Controls the refresh cycle during runtime without killing the thread.
+        - cycle=True: Resumes monitoring.
+        - cycle=False: Pauses monitoring (Thread enters idle state).
+        - cycle=None: Toggles the current state.
+
+    22. versCheck (Vers):
+        - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
+            If the version does not match, the library enters lockdown mode.
+        - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
+        - Vers=1.0/None: Sets the exact supported config version.
+        - VersHi=1.0/None: Sets the highest supported config version.
+        - VersLow=1.0/None: Sets the lowest supported config version.
+
+    CONTROLS & SECURITY:
+    - The delete function permanently removes data from the config file.
+    - Use 'Ctrl+C' or 'exit' to safely cancel the editor.
+    ============================================================
+    """
+    print(header)
+    print(config_info)
+    print(functions)
 
 def _read(filename=None):
     """Reads the config file and returns the raw content."""
@@ -74,7 +216,7 @@ def _write(daten, filename=None):
     if filename is not None:
         fileName(filename)
 
-    if locked == 'hard_lock':
+    if locked_global== 'hard_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently locked.")
         return False
     
@@ -135,7 +277,7 @@ def check_refresh(interval=5):
                     if MsgtoCons_global <= 1 or MsgtoCons_global == 5:
                         print("[WARNING] File integrity issue detected and handled.")
                 else:
-                    if refresh:
+                    if refresh_global:
                         load()
                         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] File loaded successfully.")
     if not refresh_alive:
@@ -238,9 +380,11 @@ def scan_keys(daten=None):
     else:
         return True
 
-def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0, Vers=None):
+def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None):
     """
        Configures the library settings.
+        - setup=None/dict: Enables you to send all config variables as a dict
+          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None}
         - check=True/None: Enables/disables config file existence check on initialization.
         - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
         - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
@@ -255,9 +399,30 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
           - MsgtoCons="INFO": Only Info mesages
           - MsgtoCons="WARNING": Only WARNING mesages
           - MsgtoCons="ERROR": Only ERROR mesages
-
+        - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
+                If the version does not match, the library enters lockdown mode.
+          - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
+          - Vers=1.0/None: Sets the exact supported config version.
+          - VersHi=1.0/None: Sets the highest supported config version.
+          - VersLow=1.0/None: Sets the lowest supported config version.
     """
-    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked, refresh, mode, ConfVersion
+    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked_global, refresh_global, mode_global, ConfVersion
+
+    if setup is not None:
+        #dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None}
+        check      = setup.get("check", None)
+        autoLoad   = setup.get("autoLoad", None)
+        autoCreate = setup.get("autoCreate", None)
+        Print      = setup.get("Print", None)
+        set_reset  = setup.get("set_reset", None)
+        filename   = setup.get("filename", "files/config.json")
+        MsgtoCons  = setup.get("MsgtoCons", 0)
+        Vers       = setup.get("Vers", None)
+        VersHi     = setup.get("VersHi", None)
+        VersLow    = setup.get("VersLow", None)
+        mode       = setup.get("mode", None)
+        refresh    = setup.get("refresh", None)
+        locked     = setup.get("locked", None)
 
     try:
         MsgtoCons_int = int(MsgtoCons)
@@ -276,14 +441,29 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
         else:
             MsgtoCons = 0
 
-    MsgtoCons_global = MsgtoCons
+    mode_list = ["normal", "safe_mode"]
+    locked_list = ["unlocked", "soft_lock", "hard_lock"]
 
-    MsgtoCons_global = get ("MsgtoCons", group="_header", default=MsgtoCons_global)
-    locked = get ("locked", group="_header", default='unlocked') #unlocked, soft_lock, hard_lock
-    refresh = get ("refresh", group="_header", default=False)
-    mode = get ("mode", group="_header", default="normal") #normal, safe_mode
-    if mode == "safe_mode":
-        refresh = True
+    if mode is not None:
+        if mode not in mode_list:
+            mode = "normal"
+
+    if locked is not None:
+        if locked not in locked_list:
+            mode = "unlocked"
+    
+    if refresh is not None:
+        if refresh is not isinstance(refresh,bool):
+            refresh = False
+
+    MsgtoCons_global = get ("MsgtoCons", group="_header", default=MsgtoCons)
+    locked_global= get ("locked", group="_header", default='unlocked') #unlocked, soft_lock, hard_lock
+    refresh_global= get ("refresh", group="_header", default=refresh)
+    mode_global = get ("mode", group="_header", default= mode) #normal, safe_mode
+
+    if mode_global == "safe_mode":
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] Safe Mode activated")
+        refresh_global= True
         autoCreate = True
         autoLoad = True 
         set_reset = True
@@ -293,10 +473,10 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
         
     ConfVersion = get ("ConfVersion", group="_header", default=1.0)
 
-    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked}, refresh={refresh}, mode='{mode}', ConfVersion={ConfVersion}")
+    if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] Library configuration initialized with MsgtoCons={MsgtoCons_global}, locked={locked_global}, refresh={refresh_global}, mode='{mode_global}', ConfVersion={ConfVersion}")
 
     if Vers is not None:
-        versCheck(Vers)
+        versCheck(Vers,VersHi,VersLow)
 
     if filename is not None and filename is not False:
         fileName(filename)
@@ -359,10 +539,16 @@ def libconfig (check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=Non
         
     return passed
 
-def versCheck (Vers):
+def versCheck (Vers,VersHi,VersLow):
     """Checks if the config version matches the required version"""
-
     global lockdown
+
+    if VersHi is None:
+        VersHi = Vers
+
+    if VersLow is None:
+        VersLow = Vers
+
     ConfVersion = get ("ConfVersion", group="_header")
     if ConfVersion is None:
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Version not Found. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
@@ -372,15 +558,14 @@ def versCheck (Vers):
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library is now Unlocked""")
         lockdown = False
         return True
-    elif ConfVersion != Vers:
-        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Config Version dose not match. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
-        lockdown = True
-        return False
-    else:
+    elif VersLow <= ConfVersion <= VersHi:
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print ("""[INFO] Library version matches required version.""")
         lockdown = False
         return True
-    
+    else:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("""[ERROR] Config Version dose not match. Library is in lockdown. Send versCheck("unlock") to unlock the Libary""")
+        lockdown = True
+        return False
 
 def fileName(filename):
     """Sets the name of the config file."""
@@ -396,135 +581,6 @@ def fileName(filename):
         return True
     else:
         return False
-
-def info():
-    
-    header = """
-    ============================================================
-    JSON LIBRARY - DOCUMENTATION (v2.1)
-    ============================================================
-
-    """
-    
-    config_info = f"Config Path: {pfad}"
-
-    functions = """
-
-    AVAILABLE FUNCTIONS:
-    [Functions marked with [X] return 'True' if executed 
-    successfully and 'False' upon failure]
-
-    1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None, filename="Filename"/None, MsgtoCons=0-3) [X]
-       Configures the library settings.
-        - check=True/None: Enables/disables config file existence check on initialization.
-        - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
-        - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
-        - Print=True/None: Enables/disables terminal output
-        - set_reset=True/None: Enables/disables the ability to set reset points.
-        - fileName="Filename"/None: Sets a custom name for the Json file.
-        - MsgtoCons=0-3 controls which messages are printed to the console.
-          - MsgtoCons=0: All messages are printed.
-          - MsgtoCons=1: [WARNING] & [ERROR] are printed.
-          - MsgtoCons=2: [ERROR] is printed.
-          - MsgtoCons=3: No messages are printed.
-          - MsgtoCons="INFO": Only Info mesages
-          - MsgtoCons="WARNING": Only WARNING mesages
-          - MsgtoCons="ERROR": Only ERROR mesages
-
-    2. fileName(filename)
-       Sets the name of the config file.
-
-    3. setreset(set_reset=TrueNone) [X]
-       Sets a reset point by creating a .reset backup of the current config file.
-         - set_reset=True/None: Enables/disables the ability to set reset points.
-    
-    4. reset() [X]
-       Restores the config file from the .reset backup.
-    
-    5. load(autoCreate=True/None) [X]
-       Loads JSON data into global memory.
-       - autoCreate=True: Creates a base config if none exists 
-         or restors it form the Backup.
-         If the argument is omitted, no config file is created.
-       - Should the config file be corrupted, the function 
-         attempts to restore the file from the backup.
-
-    6. show(Print=True/None)
-       Returns all loaded variable names as a list.
-       If set to 'True', output is displayed in the terminal.
-
-    7. edit(Var, Val,group="name"/None) [X]
-       Changes an EXISTING value directly via code. 
-
-    8. dump(dict) [X]
-       Updates EXISTING values in the JSON. 
-       Prevents accidental creation of new keys.
-
-    9. add(Varname, Varvalue) [X]
-       Creates a NEW data point in the JSON file.
-
-    10. addlist(dict) [X]
-       Adds multiple NEW data points simultaneously.
-       Example: j.addlist({"D1": 10, "D2": 20})
-
-    11. search(Varname) [X]
-       Checks if a variable exists in the config (True/False).
-
-    12. delete(name) [X]
-       Permanently deletes a data point from the file and memory.
-
-    13. backup() [X]
-        Creates a backup/current state of the config file (Config.json.bak)
-
-    14. get(key, group=None, default=None)
-        Secure data access.
-        - I = jsonBib.get("Name", group="group", default="DefaultValue")
-        - The Key is the name of the data point to retrieve.
-        - The Group (optional) specifies a subgroup within the JSON structure.
-        - The DefaultValue (optional) is used if "Name" is not in the config file.
-
-    15. getAll()
-        Returns all data points in the config file as a dictionary.
-
-    16. validate(Var, Valmin, Valmax=None) [X]
-        Validates if a variable meets specified conditions.
-        - For numerical values, both minimum and maximum can be set.
-        - For boolean or None values, only Valmin is required.
-    
-    17. renameGroup(old_name, new_name) [X]
-        Renames a Group or Key.
-
-    18. compare (Filename1=None,Filename2=None) [X]
-        lets you compare the content of two files.
-        if no file name is given the function will compare the 
-        set config file and the Config.reset file
-
-    19. scan_keys(daten=None) [X]
-        Checks if a group name or key is on the ignore list.
-        - if daten is None, the function checks all keys in the config file and prints a warning for any conflicts.
-        - if daten is provided, the function checks only the keys in the provided dictionary and returns 'True' if no conflicts are found or 'False' if conflicts exist.
-    
-    20. check_refresh(interval=5)
-        - Starts a background daemon thread to monitor file integrity.
-        - Automatically reloads keys into j.cfg if refresh=True is set in libconfig.
-
-    21. check_refresh_toggle(cycle=None)
-        Controls the refresh cycle during runtime without killing the thread.
-        - cycle=True: Resumes monitoring.
-        - cycle=False: Pauses monitoring (Thread enters idle state).
-        - cycle=None: Toggles the current state.
-
-    22. versCheck (Vers):
-        Checks if the config version matches the required version
-
-    CONTROLS & SECURITY:
-    - The delete function permanently removes data from the config file.
-    - Use 'Ctrl+C' or 'exit' to safely cancel the editor.
-    ============================================================
-    """
-    print(header)
-    print(config_info)
-    print(functions)
 
 def backup():
     """Creates a backup/current state of the config file (Config.json.bak)"""
@@ -730,7 +786,7 @@ def add(Varname,Varvalue):
     if not health_check():
         return False
     
-    if locked == 'soft_lock':
+    if locked_global== 'soft_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
         return False
     
@@ -760,7 +816,7 @@ def addlist(newVarlist):
     if not health_check():
         return False
 
-    if locked == 'soft_lock':
+    if locked_global== 'soft_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added but existing keys can be edited.")
         return False
     
@@ -786,7 +842,7 @@ def delete(name):
     if not health_check():
         return False
     
-    if locked == 'soft_lock':
+    if locked_global== 'soft_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be added or deleted.")
         return False
 
@@ -876,7 +932,7 @@ def reset():
     if lockdown:
         return False
     
-    if locked == 'soft_lock':
+    if locked_global== 'soft_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked and cannot be reset.")
         return False
 
@@ -942,7 +998,7 @@ def renameGroup(old_name, new_name):
     if not health_check():
         return False
     
-    if locked == 'soft_lock':
+    if locked_global== 'soft_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently soft-locked. Keys cannot be renamed.")
         return False
     
