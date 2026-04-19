@@ -7,7 +7,7 @@ import datetime
 import threading
 import time
 
-file_Name = 'files/config.json'
+file_Name = 'files\config.json'
 
 pfad = os.path.join(os.path.dirname(__file__), file_Name)
 backup_pfad = pfad + ".bak"
@@ -216,7 +216,7 @@ def _write(daten, filename=None):
     if filename is not None:
         fileName(filename)
 
-    if locked_global== 'hard_lock':
+    if locked_global == 'hard_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently locked.")
         return False
     
@@ -341,7 +341,7 @@ def health_check(autoCreate=None):
 
 def scan_keys(daten=None):
     """Checks if a group name or key is on the ignore list."""
-
+    global konflikte
     if lockdown:
         return False
     
@@ -396,7 +396,7 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
           - MsgtoCons=1: [WARNING] & [ERROR] are printed.
           - MsgtoCons=2: [ERROR] is printed.
           - MsgtoCons=3: No messages are printed.
-          - MsgtoCons="INFO": Only Info mesages
+          - MsgtoCons="INFO": Only INFO mesages
           - MsgtoCons="WARNING": Only WARNING mesages
           - MsgtoCons="ERROR": Only ERROR mesages
         - Vers: Sets a specific version range. If VersHi or VersLow is None, it defines the exact supported config version. 
@@ -446,20 +446,33 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
 
     if mode is not None:
         if mode not in mode_list:
-            mode = "normal"
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] The specified mode ({mode}) is not supported. Initializing the file in Hard safe_mode.")
+            mode = "safe_mode"
 
     if locked is not None:
         if locked not in locked_list:
-            mode = "unlocked"
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Lock method ({locked}) is not supported. Initializing the file in hard_lock mode.")
+            mode = "hard_lock"
+    else:
+        locked = "hard_lock"
     
     if refresh is not None:
         if not isinstance(refresh,bool):
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print("[ERROR] 'refresh' must be a boolean. Setting 'refresh' to False.")
             refresh = False
 
     MsgtoCons_global = get ("MsgtoCons", group="_header", default=MsgtoCons)
-    locked_global= get ("locked", group="_header", default='unlocked') #unlocked, soft_lock, hard_lock
+    locked_global= get ("locked", group="_header", default=locked) #unlocked, soft_lock, hard_lock
     refresh_global= get ("refresh", group="_header", default=refresh)
     mode_global = get ("mode", group="_header", default= mode) #normal, safe_mode
+
+    if mode_global not in mode_list:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] The specified mode ({mode_global}) of the Fileheader is not supported. Initializing the file in Hard safe_mode.")
+        mode_global = "safe_mode"
+
+    if locked_global not in locked_list:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Lock method ({locked_global}) of the Fileheader is not supported. Initializing the file in hard_lock mode.")
+        locked_global = "hard_lock"
 
     if mode_global == "safe_mode":
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print (f"[INFO] Safe Mode activated")
@@ -570,10 +583,14 @@ def versCheck (Vers,VersHi,VersLow):
 def fileName(filename,Full_Path=None):
     """Sets the filename or the absolute path of the configuration file.
 Note: Windows paths should be passed as raw strings to avoid escape sequence errors.
-Example: filename=r"C:\Users\Name\config.json"
+Example: filename=r"C:\\Users\\Name\\config.json"
 """
 
     if lockdown:
+        return False
+    
+    if locked_global != "unlocked":
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] File is in {locked_global} mode. The filename or path cannot be changed.""")
         return False
     
     global pfad, backup_pfad, reset_pfad
