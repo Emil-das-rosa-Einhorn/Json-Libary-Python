@@ -567,19 +567,41 @@ def versCheck (Vers,VersHi,VersLow):
         lockdown = True
         return False
 
-def fileName(filename):
-    """Sets the name of the config file."""
+def fileName(filename,Full_Path=None):
+    """Sets the name or full Path of the config file. 
+Path must be send as a raw string (filename=r"C://path/to/the/file")"""
 
     if lockdown:
         return False
     
     global pfad, backup_pfad, reset_pfad
-    pfad = os.path.join(os.path.dirname(__file__), filename)
-    backup_pfad = pfad + ".bak"
-    reset_pfad = pfad + ".reset"
+    
+    old_pfad = pfad
+    old_backup_pfad = backup_pfad
+    old_reset_pfad = reset_pfad
+
+    if Full_Path == None:
+        pfad = os.path.join(os.path.dirname(__file__), filename)
+        backup_pfad = pfad + ".bak"
+        reset_pfad = pfad + ".reset"
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] New Filename was set")
+    elif Full_Path == True:
+        pfad = filename
+        backup_pfad = pfad + ".bak"
+        reset_pfad = pfad + ".reset"
+        if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Full Path was set")
+    else:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] Invalid path-indicator was sent. 
+Please send 'Full_Path=None' to change the filename or 'Full_Path=True' to set a full path.""")
+        return False
+
     if os.path.exists(pfad):
         return True
     else:
+        pfad = old_pfad
+        backup_pfad = old_backup_pfad
+        reset_pfad = old_reset_pfad
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] File or path does not exist. The path was changed back.""")
         return False
 
 def backup():
