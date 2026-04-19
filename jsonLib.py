@@ -568,8 +568,10 @@ def versCheck (Vers,VersHi,VersLow):
         return False
 
 def fileName(filename,Full_Path=None):
-    """Sets the name or full Path of the config file. 
-Path must be send as a raw string (filename=r"C://path/to/the/file")"""
+    """Sets the filename or the absolute path of the configuration file.
+Note: Windows paths should be passed as raw strings to avoid escape sequence errors.
+Example: filename=r"C:\Users\Name\config.json"
+"""
 
     if lockdown:
         return False
