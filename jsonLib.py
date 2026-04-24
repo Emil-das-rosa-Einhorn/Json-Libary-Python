@@ -441,6 +441,9 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
         else:
             MsgtoCons = 0
 
+    if filename is not None and filename is not False:
+        fileName(filename)
+
     mode_list = ["normal", "safe_mode"]
     locked_list = ["unlocked", "soft_lock", "hard_lock"]
 
@@ -490,9 +493,6 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
 
     if Vers is not None:
         versCheck(Vers,VersHi,VersLow)
-
-    if filename is not None and filename is not False:
-        fileName(filename)
     
     if autoCreate is not None and autoCreate is not False:
         config_autoCreate = autoCreate
