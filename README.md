@@ -165,7 +165,19 @@ MAIN FUNCTIONS
         - Lockdown: Once engaged, no functions can be accessed. This ensures the integrity of both the program and your configuration file.
         - Vers=1.0/None: Sets the exact supported config version.
         - VersHi=1.0/None: Sets the highest supported config version.
-        - VersLow=1.0/None: Sets the lowest supported config version.        
+        - VersLow=1.0/None: Sets the lowest supported config version.
+
+23. create(Filename, contentdir, headir=None, Full_Path=None) [X]
+    - Creates a NEW JSON file with a standardized header.
+        - contentdir: The dictionary containing the file data.
+        - headir: Optional custom header. If None, a default headir_base (v1.0) is used.
+        - Full_Path=True: Uses the Filename as the absolute path.
+        - Full_Path=None: Combines the current directory with the Filename.
+
+24. rename(Filename_old, Filename_new, Full_Path=None)
+    - Renames or moves a file.
+        - It reads the data from the old file, creates a new file with that data using create(), and subsequently deletes the original file.
+
 
 ------------------------------------------------------------
 DATA SECURITY (.bak/.reset)

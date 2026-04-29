@@ -50,7 +50,7 @@ def info():
     
     header = """
     ============================================================
-    JSON LIBRARY - DOCUMENTATION (v3.1)
+    JSON LIBRARY - DOCUMENTATION (v3.2)
     ============================================================
 
     """
@@ -178,6 +178,17 @@ def info():
         - Vers=1.0/None: Sets the exact supported config version.
         - VersHi=1.0/None: Sets the highest supported config version.
         - VersLow=1.0/None: Sets the lowest supported config version.
+
+    23. create(Filename, contentdir, headir=None, Full_Path=None) [X]
+        - Creates a NEW JSON file with a standardized header.
+        - contentdir: The dictionary containing the file data.
+        - headir: Optional custom header. If None, a default headir_base (v1.0) is used.
+        - Full_Path=True: Uses the Filename as the absolute path.
+        - Full_Path=None: Combines the current directory with the Filename.
+
+    24. rename(Filename_old, Filename_new, Full_Path=None)
+        - Renames or moves a file.
+        - It reads the data from the old file, creates a new file with that data using create(), and subsequently deletes the original file.
 
     CONTROLS & SECURITY:
     - The delete function permanently removes data from the config file.
@@ -1156,10 +1167,13 @@ def create(Filename,contentdir,headir=None,Full_Path=None):
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
+            return True
         except Exception as e:
             if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. '{e}'")
+            return False
     else:
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. File '{Filename}' already exists")
+        return False
 
 def rename(Filename_old,Filename_new,Full_Path=None):
     """lets you rename and/ore move files."""
@@ -1173,5 +1187,6 @@ def rename(Filename_old,Filename_new,Full_Path=None):
     else:
         directory, file_name = os.path.split(pfad)
         json_path = directory + "/" + Filename_old
-    if os.path.exists(json_path):
-            os.remove(json_path)
+    if os.path.exists(Filename_new):
+        if os.path.exists(json_path):
+                os.remove(json_path)
