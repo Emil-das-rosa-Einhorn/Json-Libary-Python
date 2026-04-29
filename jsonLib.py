@@ -1126,6 +1126,8 @@ def compare (Filename1=None,Filename2=None):
         return False
     
 def create(Filename,contentdir,headir=None,Full_Path=None):
+    """lets you create a new file."""
+    
     if Full_Path == True:
         json_path = Filename
     else:
@@ -1158,3 +1160,18 @@ def create(Filename,contentdir,headir=None,Full_Path=None):
             if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. '{e}'")
     else:
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. File '{Filename}' already exists")
+
+def rename(Filename_old,Filename_new,Full_Path=None):
+    """lets you rename and/ore move files."""
+
+    fileName(filename=Filename_old,Full_Path=Full_Path)
+    data = _read()
+
+    create(Filename=Filename_new,contentdir=data,Full_Path=Full_Path)
+    if Full_Path == True:
+        json_path = Filename_old
+    else:
+        directory, file_name = os.path.split(pfad)
+        json_path = directory + "/" + Filename_old
+    if os.path.exists(json_path):
+            os.remove(json_path)
