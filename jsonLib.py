@@ -7,7 +7,7 @@ import datetime
 import threading
 import time
 
-file_Name = 'files\config.json'
+file_Name = 'files/config.json'
 
 pfad = os.path.join(os.path.dirname(__file__), file_Name)
 backup_pfad = pfad + ".bak"
@@ -188,14 +188,23 @@ def info():
     print(config_info)
     print(functions)
 
-def _read(filename=None):
+def _read(filename=None,Full_Path=None):
     """Reads the config file and returns the raw content."""
 
     if lockdown:
         return False
     
     if filename is not None:
-        fileName(filename)
+        if Full_Path is not None:
+            if not fileName(filename, Full_Path=Full_Path):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+        else:
+            if not fileName(filename):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+
+
     if health_check():
         try:
             with open(pfad, 'r', encoding='utf-8') as f:
@@ -208,13 +217,21 @@ def _read(filename=None):
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("[ERROR] File could not be Opened")
         return None
 
-def _write(daten, filename=None):
+def _write(daten, filename=None, Full_Path=None):
 
     if lockdown:
         return False
 
     if filename is not None:
-        fileName(filename)
+        if Full_Path is not None:
+            if not fileName(filename, Full_Path=Full_Path):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+        else:
+            if not fileName(filename):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+
 
     if locked_global == 'hard_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently locked.")
@@ -1107,3 +1124,37 @@ def compare (Filename1=None,Filename2=None):
         return True
     else:
         return False
+    
+def create(Filename,contentdir,headir=None,Full_Path=None):
+    if Full_Path == True:
+        json_path = Filename
+    else:
+        directory, file_name = os.path.split(pfad)
+        json_path = directory + "/" + Filename
+    
+    print (json_path)
+
+    headir_base = {
+                    "_header": {
+                        "ConfVersion": 1.0,
+                        "mode": "normal",
+                        "refresh": True,
+                        "locked": "unlocked",
+                        "Print": None,
+                        "MsgtoCons": 0,
+                        "last_updated": "2000-01-01 00:00:00"
+                    }}
+    
+    if headir is not None:
+        data = contentdir | headir
+    else:
+        data = headir_base | contentdir
+    
+    if not os.path.exists(json_path):
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. '{e}'")
+    else:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. File '{Filename}' already exists")
