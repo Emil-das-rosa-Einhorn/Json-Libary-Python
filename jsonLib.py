@@ -1,3 +1,5 @@
+# JSON Library for Python (v3.2)
+
 import json
 import os
 import shutil
@@ -9,11 +11,9 @@ import threading
 import time
 
 file_Name = 'files/config.json'
-
 pfad = os.path.join(os.path.dirname(__file__), file_Name)
 backup_pfad = pfad + ".bak"
 reset_pfad = pfad + ".reset"
-
 config_autoCreate = False
 config_Print = False
 config_set_reset = False
@@ -24,13 +24,9 @@ MsgtoCons_global = 0
 locked_global= "unlocked" #unlocked, soft_lock, hard_lock
 refresh_global= False
 mode_global = "normal" #normal, safe_mode
-
-
 indent_global = 4
 ensure_ascii_global = False
 dataSaver_global = None
-
-
 ConfVersion = 1.0
 refresh_cycle = False
 refresh_alive = False
@@ -479,7 +475,10 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
         indent_global = 4
 
     if ensure_ascii is not None:
-        ensure_ascii_global = ensure_ascii
+        if ensure_ascii == True:
+            ensure_ascii_global = True
+        else:
+            ensure_ascii_global = False
     else:
         ensure_ascii_global = False
 
@@ -1176,8 +1175,31 @@ def compare (Filename1=None,Filename2=None):
     else:
         return False
     
-def create(Filename,contentdir,headir=None,Full_Path=None):
+def create(Filename,contentdir,headir=None,Full_Path=None, indent=None, ensure_ascii=None, dataSaver=None):
     """lets you create a new file."""
+
+    if indent is not None:
+        pass
+    else:
+        indent_global = 4
+
+    if ensure_ascii is not None:
+        if ensure_ascii == True:
+            pass
+        else:
+            ensure_ascii = False
+    else:
+        ensure_ascii = False
+
+    if dataSaver is not None:
+        print (f"dataSaver not None: {dataSaver}")
+        if dataSaver == True:
+            pass
+        elif dataSaver == False:
+            pass
+        else:
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Invalid value for 'dataSaver'. Please send a boolean value (True/False).")
+            dataSaver_global = None
     
     if Full_Path == True:
         json_path = Filename
@@ -1185,18 +1207,16 @@ def create(Filename,contentdir,headir=None,Full_Path=None):
         directory, file_name = os.path.split(pfad)
         json_path = directory + "/" + Filename
     
-    print (json_path)
-
     headir_base = {
-                    "_header": {
-                        "ConfVersion": 1.0,
-                        "mode": "normal",
-                        "refresh": True,
-                        "locked": "unlocked",
-                        "Print": None,
-                        "MsgtoCons": 0,
-                        "last_updated": "2000-01-01 00:00:00"
-                    }}
+        "_header": {
+            "ConfVersion": 1.0,
+            "mode": "normal",
+            "refresh": True,
+            "locked": "unlocked",
+            "Print": None,
+            "MsgtoCons": 0,
+            "last_updated": "2000-01-01 00:00:00"
+        }}
     
     if headir is not None:
         data = contentdir | headir

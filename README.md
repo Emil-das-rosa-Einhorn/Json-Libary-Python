@@ -1,4 +1,4 @@
-==========  JSON LIBRARY - README (v3.1)  ==========
+==========  JSON LIBRARY - README (v3.2)  ==========
 
 DESCRIPTION:
 This library enables easy management of configuration files in Python. 
@@ -6,15 +6,12 @@ JSON data can be loaded directly into a class (cfg.) for easy access.
 The file is automatically saved when changes are made, and backups and reset points can be created.
 
 ------------------------------------------------------------
-NEW IN VERSION 3.1
+NEW IN VERSION 3.2
 ------------------------------------------------------------
-**Live Refresh:** Background monitoring for manual file changes.
 
-**Atomic Writes:** Prevents file corruption during crashes or power loss.
+**Data Saver Mode:** Minimizes file size by stripping whitespaces to save disk space and bandwidth.
 
-**File Locking:** Multi-process safety using cross-platform locking.
-
-**System Header:** Integrated metadata for versioning and state control.
+**Downward Compatibility:** Version 3.2 is fully backward compatible down to Version 2.0.
 
 ------------------------------------------------------------
 MAIN FEATURES
@@ -28,6 +25,14 @@ MAIN FEATURES
 **Reset:**        Enable manual snapshots for config recovery.
 
 **Data Types:**   Supports int, float, str, bool, and None.
+
+**Live Refresh:** Background monitoring for manual file changes.
+
+**Atomic Writes:** Prevents file corruption during crashes or power loss.
+
+**File Locking:** Multi-process safety using cross-platform locking.
+
+**System Header:** Integrated metadata for versioning and state control.
 
 ------------------------------------------------------------
 INSTALLATION & START
@@ -46,7 +51,7 @@ MAIN FUNCTIONS
 [Functions marked with [X] return 'True' if executed 
     successfully and 'False' upon failure]
 
-1. libconfig(setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None) [X]
+1. libconfig(setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None, indent=None, ensure_ascii=None, dataSaver=None) [X]
    - Configures the library settings.
       - setup=None/dict: Enables you to send all config variables as a dict
          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None} 
@@ -174,7 +179,7 @@ MAIN FUNCTIONS
         - Full_Path=True: Uses the Filename as the absolute path.
         - Full_Path=None: Combines the current directory with the Filename.
 
-24. rename(Filename_old, Filename_new, Full_Path=None)
+24. rename(Filename_old, Filename_new, Full_Path=None, indent=None, ensure_ascii=None, dataSaver=None)
     - Renames or moves a file.
         - It reads the data from the old file, creates a new file with that data using create(), and subsequently deletes the original file.
 
