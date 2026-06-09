@@ -46,7 +46,7 @@ INSTALLATION & START
 7. Access: - print(j.cfg.Version)  # Access your data directly
 
 ------------------------------------------------------------
-MAIN FUNCTIONS
+FUNCTIONS
 ------------------------------------------------------------
 [Functions marked with [X] return 'True' if executed 
     successfully and 'False' upon failure]
