@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+from xml.etree.ElementTree import indent
 import portalocker
 import datetime
 import threading
@@ -23,6 +24,13 @@ MsgtoCons_global = 0
 locked_global= "unlocked" #unlocked, soft_lock, hard_lock
 refresh_global= False
 mode_global = "normal" #normal, safe_mode
+
+
+indent_global = 4
+ensure_ascii_global = False
+dataSaver_global = None
+
+
 ConfVersion = 1.0
 refresh_cycle = False
 refresh_alive = False
@@ -231,14 +239,24 @@ def _write(daten, filename=None):
         daten["_header"]["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            portalocker.lock(f, portalocker.LOCK_EX)
-            json.dump(daten, f, indent=4, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())
-            portalocker.unlock(f)
-        os.replace(temp_pfad, pfad)
-        return True
+        if dataSaver_global:
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                portalocker.lock(f, portalocker.LOCK_EX)
+                json.dump(daten, f, indent=None, separators=(',', ':'), ensure_ascii=ensure_ascii_global)
+                f.flush()
+                os.fsync(f.fileno())
+                portalocker.unlock(f)
+            os.replace(temp_pfad, pfad)
+            return True
+        else:
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                portalocker.lock(f, portalocker.LOCK_EX)
+                json.dump(daten, f, indent=indent_global, ensure_ascii=ensure_ascii_global)
+                f.flush()
+                os.fsync(f.fileno())
+                portalocker.unlock(f)
+            os.replace(temp_pfad, pfad)
+            return True
 
     except Exception as e:
         print(f"[ERROR] Atomic write failed: {e}")
@@ -380,11 +398,11 @@ def scan_keys(daten=None):
     else:
         return True
 
-def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None):
+def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,set_reset=None,filename=None,MsgtoCons = 0,Vers=None,VersHi=None,VersLow=None,mode=None,refresh=None,locked=None, indent=None, ensure_ascii=None, dataSaver=None):
     """
        Configures the library settings.
         - setup=None/dict: Enables you to send all config variables as a dict
-          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None}
+          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None,"indent":None,"ensure_ascii":None,"dataSaver":None}
         - check=True/None: Enables/disables config file existence check on initialization.
         - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
         - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
@@ -406,10 +424,10 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
           - VersHi=1.0/None: Sets the highest supported config version.
           - VersLow=1.0/None: Sets the lowest supported config version.
     """
-    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked_global, refresh_global, mode_global, ConfVersion
+    global config_autoCreate, config_Print, config_set_reset, config_autoLoad, config_check, passed, MsgtoCons_global, locked_global, refresh_global, mode_global, ConfVersion, indent_global, ensure_ascii_global, dataSaver_global
 
     if setup is not None:
-        #dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None}
+        #dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None,"indent":None,"ensure_ascii":None,"dataSaver":None}
         check      = setup.get("check", None)
         autoLoad   = setup.get("autoLoad", None)
         autoCreate = setup.get("autoCreate", None)
@@ -423,6 +441,29 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
         mode       = setup.get("mode", None)
         refresh    = setup.get("refresh", None)
         locked     = setup.get("locked", None)
+        indent     = setup.get("indent", None)
+        ensure_ascii = setup.get("ensure_ascii", None)
+        dataSaver  = setup.get("dataSaver", None)
+
+    if indent is not None:
+        indent_global = indent
+    else:
+        indent_global = 4
+
+    if ensure_ascii is not None:
+        ensure_ascii_global = ensure_ascii
+    else:
+        ensure_ascii_global = False
+
+    if dataSaver is not None:
+        print (f"dataSaver not None: {dataSaver}")
+        if dataSaver == True:
+            dataSaver_global = True
+        elif dataSaver == False:
+            dataSaver_global = False
+        else:
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Invalid value for 'dataSaver'. Please send a boolean value (True/False).")
+            dataSaver_global = None
 
     try:
         MsgtoCons_int = int(MsgtoCons)
@@ -548,8 +589,7 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
                 pass
         else:
             if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print ("[WARNING] Could not set reset point. Ensure that the config file exists or 'Set reset point' is enabled.")
-            passed = False
-        
+            passed = False    
     return passed
 
 def versCheck (Vers,VersHi,VersLow):
