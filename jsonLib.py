@@ -8,7 +8,7 @@ import datetime
 import threading
 import time
 
-file_Name = 'files\config.json'
+file_Name = 'files/config.json'
 
 pfad = os.path.join(os.path.dirname(__file__), file_Name)
 backup_pfad = pfad + ".bak"
@@ -58,7 +58,7 @@ def info():
     
     header = """
     ============================================================
-    JSON LIBRARY - DOCUMENTATION (v3.1)
+    JSON LIBRARY - DOCUMENTATION (v3.2)
     ============================================================
 
     """
@@ -187,6 +187,17 @@ def info():
         - VersHi=1.0/None: Sets the highest supported config version.
         - VersLow=1.0/None: Sets the lowest supported config version.
 
+    23. create(Filename, contentdir, headir=None, Full_Path=None) [X]
+        - Creates a NEW JSON file with a standardized header.
+        - contentdir: The dictionary containing the file data.
+        - headir: Optional custom header. If None, a default headir_base (v1.0) is used.
+        - Full_Path=True: Uses the Filename as the absolute path.
+        - Full_Path=None: Combines the current directory with the Filename.
+
+    24. rename(Filename_old, Filename_new, Full_Path=None)
+        - Renames or moves a file.
+        - It reads the data from the old file, creates a new file with that data using create(), and subsequently deletes the original file.
+
     CONTROLS & SECURITY:
     - The delete function permanently removes data from the config file.
     - Use 'Ctrl+C' or 'exit' to safely cancel the editor.
@@ -196,14 +207,23 @@ def info():
     print(config_info)
     print(functions)
 
-def _read(filename=None):
+def _read(filename=None,Full_Path=None):
     """Reads the config file and returns the raw content."""
 
     if lockdown:
         return False
     
     if filename is not None:
-        fileName(filename)
+        if Full_Path is not None:
+            if not fileName(filename, Full_Path=Full_Path):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+        else:
+            if not fileName(filename):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+
+
     if health_check():
         try:
             with open(pfad, 'r', encoding='utf-8') as f:
@@ -216,13 +236,21 @@ def _read(filename=None):
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print ("[ERROR] File could not be Opened")
         return None
 
-def _write(daten, filename=None):
+def _write(daten, filename=None, Full_Path=None):
 
     if lockdown:
         return False
 
     if filename is not None:
-        fileName(filename)
+        if Full_Path is not None:
+            if not fileName(filename, Full_Path=Full_Path):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+        else:
+            if not fileName(filename):
+                if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] File does not exist {filename}")
+                return False
+
 
     if locked_global == 'hard_lock':
         if MsgtoCons_global <= 1 or MsgtoCons_global == 5: print("[WARRNING] File is currently locked.")
@@ -482,6 +510,9 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
         else:
             MsgtoCons = 0
 
+    if filename is not None and filename is not False:
+        fileName(filename)
+
     mode_list = ["normal", "safe_mode"]
     locked_list = ["unlocked", "soft_lock", "hard_lock"]
 
@@ -531,9 +562,6 @@ def libconfig (setup=None,check=None,autoLoad=True,autoCreate=None,Print=None,se
 
     if Vers is not None:
         versCheck(Vers,VersHi,VersLow)
-
-    if filename is not None and filename is not False:
-        fileName(filename)
     
     if autoCreate is not None and autoCreate is not False:
         config_autoCreate = autoCreate
@@ -1147,3 +1175,58 @@ def compare (Filename1=None,Filename2=None):
         return True
     else:
         return False
+    
+def create(Filename,contentdir,headir=None,Full_Path=None):
+    """lets you create a new file."""
+    
+    if Full_Path == True:
+        json_path = Filename
+    else:
+        directory, file_name = os.path.split(pfad)
+        json_path = directory + "/" + Filename
+    
+    print (json_path)
+
+    headir_base = {
+                    "_header": {
+                        "ConfVersion": 1.0,
+                        "mode": "normal",
+                        "refresh": True,
+                        "locked": "unlocked",
+                        "Print": None,
+                        "MsgtoCons": 0,
+                        "last_updated": "2000-01-01 00:00:00"
+                    }}
+    
+    if headir is not None:
+        data = contentdir | headir
+    else:
+        data = headir_base | contentdir
+    
+    if not os.path.exists(json_path):
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+            return True
+        except Exception as e:
+            if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. '{e}'")
+            return False
+    else:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Creation Failed. File '{Filename}' already exists")
+        return False
+
+def rename(Filename_old,Filename_new,Full_Path=None):
+    """lets you rename and/ore move files."""
+
+    fileName(filename=Filename_old,Full_Path=Full_Path)
+    data = _read()
+
+    create(Filename=Filename_new,contentdir=data,Full_Path=Full_Path)
+    if Full_Path == True:
+        json_path = Filename_old
+    else:
+        directory, file_name = os.path.split(pfad)
+        json_path = directory + "/" + Filename_old
+    if os.path.exists(Filename_new):
+        if os.path.exists(json_path):
+                os.remove(json_path)
