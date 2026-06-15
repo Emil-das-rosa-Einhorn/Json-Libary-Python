@@ -1,4 +1,4 @@
-# JSON Library for Python (v3.2)
+# JSON Library for Python (v4.0) in defvelopment
 
 import json
 import os
