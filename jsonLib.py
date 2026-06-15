@@ -70,7 +70,7 @@ def info():
     1. libconfig(check=True/None,autoLoad=True/None,autoCreate=True/None,Print=True/None,set_reset=True/None, filename="Filename"/None, MsgtoCons=0-3) [X]
        Configures the library settings.
         - setup=None/dict: Enables you to send all config variables as a dict
-          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None} 
+          - dict = {"check":None,"autoLoad":None,"autoCreate":None,"Print":None,"set_reset":None,"filename":"files/config.json","MsgtoCons":0,"Vers":None,"VersHi":None,"VersLow":None,"mode":None,"refresh":None,"locked":None,"indent":None,"ensure_ascii":None,"dataSaver":None}
         - check=True/None: Enables/disables config file existence check on initialization.
         - autoLoad=True/None: Enables/disables automatic loading of the config file on initialization
         - autoCreate=True/None: Enables/disables automatic creation of a base config if none exists.
