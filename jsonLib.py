@@ -10,10 +10,11 @@ import datetime
 import threading
 import time
 
-file_Name = 'files/config.json'
+file_Name = 'files/V4.json'
 pfad = os.path.join(os.path.dirname(__file__), file_Name)
 backup_pfad = pfad + ".bak"
 reset_pfad = pfad + ".reset"
+typemap_path = pfad + ".typemap"
 config_autoCreate = False
 config_Print = False
 config_set_reset = False
@@ -23,7 +24,7 @@ passed = True
 MsgtoCons_global = 0
 locked_global= "unlocked" #unlocked, soft_lock, hard_lock
 refresh_global= False
-mode_global = "normal" #normal, safe_mode
+mode_global = "normal" #normal, safe_mode, typemap
 indent_global = 4
 ensure_ascii_global = False
 dataSaver_global = None
@@ -287,6 +288,32 @@ def _write(daten, filename=None, Full_Path=None):
         if os.path.exists(temp_pfad):
             os.remove(temp_pfad)
         return False
+    
+def _typechecker (Var, Val, Change=None, Var_group=None):
+    _Type_List = ["INT", "STRING", "FLOAT", "LIST", "BOOLEAN", None]
+    _Allow_List = ["RANGE", "LIST", "EXCLUDE", "VALUE", "INT", "STRING", "FLOAT", "BOOLEAN", None]
+    old_path = pfad
+    fileName(typemap_path)
+    if Var_group is None:
+        typemap_data = get(Var)
+    else:
+        typemap_data = get(Var, group=Var_group)
+    _Type = typemap_data["Type"]
+    _Allow = typemap_data["Allow"]
+    _Content = typemap_data["Content"]
+    _Default = typemap_data["Def"]
+
+    if _Type not in _Type_List:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Wrong attibut in Typemap Data. {_Type}")
+        fileName(old_path)
+        return False
+
+    if _Allow not in _Allow_List:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Wrong attibut in Typemap Data. {_Allow}")
+        fileName(old_path)
+        return False
+
+    fileName(old_path)
 
 def check_refresh_toggle(cycle=None):
     """Starts and stops the refresh cycle that periodically checks the file integrity and loads the Keys."""
@@ -660,21 +687,24 @@ Example: filename=r"C:\\Users\\Name\\config.json"
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] File is in {locked_global} mode. The filename or path cannot be changed.""")
         return False
     
-    global pfad, backup_pfad, reset_pfad
+    global pfad, backup_pfad, reset_pfad, typemap_path
     
     old_pfad = pfad
     old_backup_pfad = backup_pfad
     old_reset_pfad = reset_pfad
+    old_typemap_path = typemap_path
 
     if Full_Path == None:
         pfad = os.path.join(os.path.dirname(__file__), filename)
         backup_pfad = pfad + ".bak"
         reset_pfad = pfad + ".reset"
+        typemap_path = pfad + ".typemap"
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] New Filename was set")
     elif Full_Path == True:
         pfad = filename
         backup_pfad = pfad + ".bak"
         reset_pfad = pfad + ".reset"
+        typemap_path = pfad + ".typemap"
         if MsgtoCons_global <= 0 or MsgtoCons_global == 4: print(f"[INFO] Full Path was set")
     else:
         if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] Invalid path-indicator was sent. 
@@ -684,10 +714,11 @@ Please send 'Full_Path=None' to change the filename or 'Full_Path=True' to set a
     if os.path.exists(pfad):
         return True
     else:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] File or path ({pfad}) does not exist. The path was changed back.""")
         pfad = old_pfad
         backup_pfad = old_backup_pfad
         reset_pfad = old_reset_pfad
-        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"""[ERROR] File or path does not exist. The path was changed back.""")
+        typemap_path = old_typemap_path
         return False
 
 def backup():
