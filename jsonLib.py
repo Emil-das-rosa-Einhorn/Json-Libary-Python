@@ -443,7 +443,7 @@ def _pars_allow (Val):
         case "STRING": Notfaild, New_Val = _isString(Val)
         case "FLOAT": Notfaild, New_Val = _isFloat(Val)
         case "BOOLEAN": Notfaild, New_Val = _isBoolean(Val)
-        case _ : pass
+        case _ : Notfaild = True; New_Val = Val
     if Notfaild:
         return True, New_Val
     else:
