@@ -34,6 +34,10 @@ refresh_alive = False
 lockdown = False
 Replace = False
 Convert = False
+_Type = ""
+_Allow = ""
+_Content = ""
+_Default = ""
 
 konflikte = []
 
@@ -291,9 +295,10 @@ def _write(daten, filename=None, Full_Path=None):
             os.remove(temp_pfad)
         return False
     
-def _typechecker (Var, Val, Change=None, Var_group=None):
+def _typechecker (Var, Val, Var_group=None):
     _Type_List = ["INT", "STRING", "FLOAT", "LIST", "BOOLEAN", None]
     _Allow_List = ["RANGE", "LIST", "EXCLUDE", "VALUE", "INT", "STRING", "FLOAT", "BOOLEAN", None]
+    global _Type, _Allow, _Content, _Default
     Failed = False
     old_path = pfad
     fileName(typemap_path)
@@ -318,12 +323,15 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
 
     if _Type == "INT":
       if type(Val) == int:
-          pass
+        Failed, Val = _pars_allow (Val)
+        Failed = not Failed
       else:
         if Convert:
             try:
                 Conv_Val = int(Val)
                 Val = Conv_Val
+                Failed, Val = _pars_allow (Val)
+                Failed = not Failed
             except Exception as e:
                 if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be converted. {Val} ERROR-Code: {e}")
                 Failed = True
@@ -336,52 +344,164 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
             
 
     elif _Type == "STRING":
-        pass
+        if type(Val) == str:
+            Failed, Val = _pars_allow (Val)
+            Failed = not Failed
+        else:
+            if Convert:
+                try:
+                    Conv_Val = str(Val)
+                    Val = Conv_Val
+                    Failed, Val = _pars_allow (Val)
+                    Failed = not Failed
+                except Exception as e:
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be converted. {Val} ERROR-Code: {e}")
+                    Failed = True
+            elif Replace:
+                Val = _Default
+                Failed = False
+            else:
+                Failed = True
 
     elif _Type == "FLOAT":
-        pass
+        if type(Val) == float:
+            Failed, Val = _pars_allow (Val)
+            Failed = not Failed
+        else:
+            if Convert:
+                try:
+                    Conv_Val = float(Val)
+                    Val = Conv_Val
+                    Failed, Val = _pars_allow (Val)
+                    Failed = not Failed
+                except Exception as e:
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be converted. {Val} ERROR-Code: {e}")
+                    Failed = True
+            elif Replace:
+                Val = _Default
+                Failed = False
+            else:
+                Failed = True
        
     elif _Type == "LIST":
-        pass
+        if type(Val) == list:
+            Failed, Val = _pars_allow (Val)
+            Failed = not Failed
+        else:
+            if Convert:
+                try:
+                    Conv_Val = list(Val)
+                    Val = Conv_Val
+                    Failed, Val = _pars_allow (Val)
+                    Failed = not Failed
+                except Exception as e:
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be converted. {Val} ERROR-Code: {e}")
+                    Failed = True
+            elif Replace:
+                Val = _Default
+                Failed = False
+            else:
+                Failed = True
 
     elif _Type == "BOOLEAN":
-        pass
+        if type(Val) == bool:
+            Failed, Val = _pars_allow (Val)
+            Failed = not Failed
+        else:
+            if Convert:
+                try:
+                    Conv_Val = bool(Val)
+                    Val = Conv_Val
+                    Failed, Val = _pars_allow (Val)
+                    Failed = not Failed
+                except Exception as e:
+                    if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be converted. {Val} ERROR-Code: {e}")
+                    Failed = True
+            elif Replace:
+                Val = _Default
+                Failed = False
+            else:
+                Failed = True
+
     else:
-        pass
+        Failed, Val = _pars_allow (Val)
+        Failed = not Failed
 
+    fileName(old_path)
+    if Failed:
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be Validated || Variable:{Var}, Var. Group:{Var_group}, Typemap Data:{typemap_data}")
+    Failed = not Failed
+    return Failed, Val
 
-    def _isRANGE(Val):
-        if Val >= _Content[0] and Val <= _Content[0]:
+def _pars_allow (Val):
+    match _Allow:
+        case "RANGE": Notfaild, New_Val = _isRANGE(Val)
+        case "LIST": Notfaild, New_Val = _isList(Val)
+        case "EXCLUDE": Notfaild, New_Val =_isExclude(Val)
+        case "VALUE": Notfaild, New_Val = _isValue(Val)
+        case "INT": Notfaild, New_Val = _isInt(Val)
+        case "STRING": Notfaild, New_Val = _isString(Val)
+        case "FLOAT": Notfaild, New_Val = _isFloat(Val)
+        case "BOOLEAN": Notfaild, New_Val = _isBoolean(Val)
+        case _ : pass
+    if Notfaild:
+        return True, New_Val
+    else:
+        return False, New_Val
+
+def _isRANGE(Val):
+    if _Content[0] <= Val <= _Content[1]:
+        return True, Val
+    else:
+        if Replace:
+            Val = _Default
             return True, Val
         else:
-            if Replace:
-                Val = _Default
-                return True, Val
-            else:
-                return False, Val
+            return False, Val
 
-    def _isList(Val):
-        if Val in _Content:
+def _isList(Val):
+    if Val in _Content:
+        return True, Val
+    else:
+        if Replace:
+            Val = _Default
             return True, Val
         else:
-            if Replace:
-                Val = _Default
-                return True, Val
-            else:
-                return False, Val
+            return False, Val
 
-    def _isExclude(Val):
-        if Val not in _Content:
+def _isExclude(Val):
+    if Val not in _Content:
+        return True, Val
+    else:
+        if Replace:
+            Val = _Default
             return True, Val
         else:
-            if Replace:
-                Val = _Default
+            return False, Val
+
+def _isValue(Val):
+    if Val == _Content:
+        return True, Val
+    else:
+        if Replace:
+            Val = _Content
+            return True, Val
+        else:
+            return False, Val
+
+def _isInt(Val):
+    if _Type == "LIST":
+        for i in Val:
+            if type(i) == int:
                 return True, Val
             else:
-                return False, Val
-
-    def _isValue(Val):
-        if Val == _Content:
+                if Replace:
+                    Val = _Content
+                    return True, Val
+                else:
+                    return False, Val
+    else:
+        if type(Val) == int:
             return True, Val
         else:
             if Replace:
@@ -390,19 +510,10 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
             else:
                 return False, Val
 
-    def _isInt(Val):
-        if _Type == "LIST":
-            for i in range(Val):
-                if type(Val) == int:
-                    return True, Val
-                else:
-                    if Replace:
-                        Val = _Content
-                        return True, Val
-                    else:
-                        return False, Val
-        else:
-            if type(Val) == int:
+def _isString(Val):
+    if _Type == "LIST":
+        for i in Val:
+            if type(i) == str:
                 return True, Val
             else:
                 if Replace:
@@ -410,20 +521,20 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
                     return True, Val
                 else:
                     return False, Val
-
-    def _isString(Val):
-        if _Type == "LIST":
-            for i in range(Val):
-                if type(Val) == str:
-                    return True, Val
-                else:
-                    if Replace:
-                        Val = _Content
-                        return True, Val
-                    else:
-                        return False, Val
+    else:
+        if type(Val) == str:
+            return True, Val
         else:
-            if type(Val) == str:
+            if Replace:
+                Val = _Content
+                return True, Val
+            else:
+                return False, Val
+
+def _isFloat(Val):
+    if _Type == "LIST":
+        for i in Val:
+            if type(i) == float:
                 return True, Val
             else:
                 if Replace:
@@ -431,20 +542,20 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
                     return True, Val
                 else:
                     return False, Val
-
-    def _isFloat(Val):
-        if _Type == "LIST":
-            for i in range(Val):
-                if type(Val) == float:
-                    return True, Val
-                else:
-                    if Replace:
-                        Val = _Content
-                        return True, Val
-                    else:
-                        return False, Val
+    else:
+        if type(Val) == float:
+            return True, Val
         else:
-            if type(Val) == float:
+            if Replace:
+                Val = _Content
+                return True, Val
+            else:
+                return False, Val
+
+def _isBoolean(Val):
+    if _Type == "LIST":
+        for i in Val:
+            if type(i) == bool:
                 return True, Val
             else:
                 if Replace:
@@ -452,30 +563,15 @@ def _typechecker (Var, Val, Change=None, Var_group=None):
                     return True, Val
                 else:
                     return False, Val
-
-    def _isBoolean(Val):
-        if _Type == "LIST":
-            for i in range(Val):
-                if type(Val) == bool:
-                    return True, Val
-                else:
-                    if Replace:
-                        Val = _Content
-                        return True, Val
-                    else:
-                        return False, Val
+    else:
+        if type(Val) == bool:
+            return True, Val
         else:
-            if type(Val) == bool:
+            if Replace:
+                Val = _Content
                 return True, Val
             else:
-                if Replace:
-                    Val = _Content
-                    return True, Val
-                else:
-                    return False, Val
-
-    fileName(old_path)
-    return Failed, Val
+                return False, Val
 
 def check_refresh_toggle(cycle=None):
     """Starts and stops the refresh cycle that periodically checks the file integrity and loads the Keys."""
