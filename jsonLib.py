@@ -306,6 +306,7 @@ def _typechecker (Var, Val, Var_group=None):
         typemap_data = get(Var)
     else:
         typemap_data = get(Var, group=Var_group)
+
     _Type = typemap_data["Type"]
     _Allow = typemap_data["Allow"]
     _Content = typemap_data["Content"]
@@ -429,7 +430,7 @@ def _typechecker (Var, Val, Var_group=None):
 
     fileName(old_path)
     if Failed:
-        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be Validated || Variable:{Var}, Var. Group:{Var_group}, Typemap Data:{typemap_data}")
+        if MsgtoCons_global <= 2 or MsgtoCons_global == 6: print(f"[ERROR] Value could not be Validated || Variable:{Var}, Var.Group:{Var_group}, Typemap Data:{typemap_data}")
     Failed = not Failed
     return Failed, Val
 
@@ -1538,4 +1539,4 @@ def rename(Filename_old,Filename_new,Full_Path=None):
         json_path = directory + "/" + Filename_old
     if os.path.exists(Filename_new):
         if os.path.exists(json_path):
-                os.remove(json_path)
+                os.remove(json_path)# JSON Library for Python (v4.0) in defvelopment
