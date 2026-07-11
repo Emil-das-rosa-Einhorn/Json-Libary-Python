@@ -13,29 +13,30 @@ class JsonEditorApp(App):
     .editor-pane { width: 65%; padding-left: 2; }
     Input, Select { margin-top: 0; margin-bottom: 1; }
     Label { margin-top: 1; text-style: bold; }
-    #btn-open { margin: 1 0; width: 100%; }
+    #btn-open { margin-top: 1; margin-bottom: 0; width: 100%; }
+    #path-input { margin-bottom: 1; }
     #edit-fields { margin-top: 1; }
     #search-input { margin-bottom: 1; }
     Tree { background: $surface; border: round $accent; height: 1fr; }
     
     .tree-actions { 
         margin-top: 1; 
-        height: 3;          /* Feste Höhe für eine Zeile Buttons */
-        width: 100%;        /* Nutzt die volle Breite der Sidebar */
+        height: 3;          /* Fixed height for one row of buttons */
+        width: 100%;        /* Uses full width of the sidebar */
     }
 
-    /* Die Buttons teilen sich den Platz flexibel und knicken nicht ein */
+    /* Buttons share space flexibly without breaking lines */
     .tree-btn { 
         width: 1fr; 
-        min-width: 4;       /* Erlaubt Textual, die Buttons schmaler zu machen */
-        margin: 0;          /* Ränder auf 0, um Platz zu sparen */
-        padding: 0;         /* Kompakter Innenabstand */
+        min-width: 4;       /* Allows Textual to shrink buttons if needed */
+        margin: 0;          /* Remove margins to save space */
+        padding: 0;         /* Compact padding */
     }
     
     TabPane { padding: 1; background: $surface-darken-1; }
     .action-btn { margin-top: 1; width: 100%; }
 
-    /* Layout für die Terminal-Größenwarnung */
+    /* Layout for terminal size warning */
     #warning-screen {
         align: center middle;
         text-align: center;
@@ -64,65 +65,77 @@ class JsonEditorApp(App):
         self.current_path = [] 
         self.typemap_exists = False
 
+        # Pre-formatted English quick start guide
+        self.welcome_guide = (
+            "Welcome to JSON Editor!\n\n"
+            "Quick Start Guide:\n"
+            "1. Click 'Open JSON File' or type the path manually below it.\n"
+            "2. Select any node in the 'JSON Structure' tree to view or edit it.\n"
+            "3. Use the '➕ New' and '❌ Delete' buttons to modify the keys.\n"
+            "4. If needed, generate or manage validation rules via the 'Typemap' tab."
+        )
+
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         
-        # Die Warnmeldung, falls das Terminal zu klein ist
+        # Terminal size warning screen
         with Vertical(id="warning-screen") as ws:
             ws.display = False
-            yield Label("⚠️ TERMINAL ZU KLEIN ⚠️", id="warning-title")
+            yield Label("⚠️ TERMINAL TOO SMALL ⚠️", id="warning-title")
             yield Label("", id="warning-details")
-            yield Label("Bitte vergrößere dein Terminal-Fenster, um die App zu nutzen.")
+            yield Label("Please resize your terminal window to use this application.")
 
-        # Das Hauptinterface
+        # Main layout interface
         with Horizontal(id="main-layout", classes="container") as ml:
             with Vertical(classes="sidebar"):
-                yield Button("JSON Datei öffnen", id="btn-open", variant="primary")
-                yield Label("Suchen:")
-                yield Input(placeholder="Keys filtern...", id="search-input")
-                yield Label("JSON Struktur:")
+                yield Button("Open JSON File", id="btn-open", variant="primary")
+                # Fallback path input directly below the open button
+                yield Input(placeholder="...or type path manually + press Enter", id="path-input")
+                
+                yield Label("Search:")
+                yield Input(placeholder="Filter keys...", id="search-input")
+                yield Label("JSON Structure:")
                 yield Tree("Root", id="json-tree")
                 
                 with Horizontal(classes="tree-actions"):
-                    yield Button("➕ Neu", id="btn-add-key", variant="success", classes="tree-btn")
-                    yield Button("❌ Löschen", id="btn-delete-key", variant="error", classes="tree-btn")
+                    yield Button("➕ New", id="btn-add-key", variant="success", classes="tree-btn")
+                    yield Button("❌ Delete", id="btn-delete-key", variant="error", classes="tree-btn")
                     yield Button("⚙️ Typemap", id="btn-create-typemap", variant="warning", classes="tree-btn")
             
             with Vertical(classes="editor-pane"):
-                yield Label("Wähle links einen Eintrag aus, um ihn zu bearbeiten.", id="status-msg")
+                yield Label(self.welcome_guide, id="status-msg")
                 
                 with Vertical(id="edit-fields") as v:
                     v.display = False
                     
-                    yield Label("Key-Name:")
+                    yield Label("Key Name:")
                     yield Input(id="input-key")
                     
                     with TabbedContent():
-                        with TabPane("JSON Wert", id="tab-value"):
-                            yield Label("Aktueller Wert (nur für Endknoten):")
+                        with TabPane("JSON Value", id="tab-value"):
+                            yield Label("Current Value (Leaf nodes only):")
                             yield Input(id="input-value")
-                            yield Button("Wert-Änderung speichern", id="btn-save-value", variant="success", classes="action-btn")
+                            yield Button("Save Value Changes", id="btn-save-value", variant="success", classes="action-btn")
                         
-                        with TabPane("Typemap Regeln", id="tab-typemap"):
-                            yield Label("Datentyp (Type):")
+                        with TabPane("Typemap Rules", id="tab-typemap"):
+                            yield Label("Data Type (Type):")
                             type_options = [(str(t) if t is not None else "null", t) for t in self._Type_List]
-                            yield Select(type_options, id="tm-type", prompt="Wähle einen Typ...")
+                            yield Select(type_options, id="tm-type", prompt="Select a type...")
                             
-                            yield Label("Zulassung (Allow):")
+                            yield Label("Validation Mode (Allow):")
                             allow_options = [(str(a) if a is not None else "null", a) for a in self._Allow_List]
-                            yield Select(allow_options, id="tm-allow", prompt="Wähle einen Modus...")
+                            yield Select(allow_options, id="tm-allow", prompt="Select a mode...")
                             
-                            yield Label("Inhalt (Content): e.g. [1, 2, 3] oder einzelne Werte")
+                            yield Label("Content: e.g. [1, 2, 3] or specific values")
                             yield Input(id="tm-content", placeholder="null")
                             
-                            yield Label("Standardwert (Def / Default):")
+                            yield Label("Default Value (Def):")
                             yield Input(id="tm-def", placeholder="null")
                             
-                            yield Button("Typemap-Regeln speichern", id="btn-save-typemap", variant="warning", classes="action-btn")
+                            yield Button("Save Typemap Rules", id="btn-save-typemap", variant="warning", classes="action-btn")
         yield Footer()
 
     def on_mount(self) -> None:
-        # Standardmäßig den Generierungs-Button verstecken, bis ein JSON geladen wird
         self.query_one("#btn-create-typemap").display = False
         self.check_terminal_size()
 
@@ -130,7 +143,6 @@ class JsonEditorApp(App):
         self.check_terminal_size()
 
     def check_terminal_size(self) -> None:
-        """Prüft, ob das Terminal groß genug ist, und blendet ggf. eine Warnung ein."""
         min_width = 100
         min_height = 24
         
@@ -141,11 +153,10 @@ class JsonEditorApp(App):
         main_layout = self.query_one("#main-layout")
 
         if current_width < min_width or current_height < min_height:
-            # Interface verstecken, Warnung anzeigen
             main_layout.display = False
             warning_screen.display = True
             self.query_one("#warning-details", Label).update(
-                f"Aktuell: {current_width}x{current_height} Zeilen | Erforderlich: Mindestens {min_width}x{min_height}"
+                f"Current: {current_width}x{current_height} lines | Required: At least {min_width}x{min_height}"
             )
         else:
             warning_screen.display = False
@@ -165,50 +176,69 @@ class JsonEditorApp(App):
         elif event.button.id == "btn-delete-key":
             self.delete_current_key()
 
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        # Triggers when Enter is pressed inside the manual path input field
+        if event.input.id == "path-input":
+            path = event.value.strip()
+            if path:
+                self.load_json_from_path(path)
+
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "search-input" and self.file_path:
             self.refresh_tree(search_term=event.value)
 
     def open_file_dialog(self) -> None:
-        root = Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        file_path = filedialog.askopenfilename(
-            title="JSON Datei auswählen",
-            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
-        )
-        root.destroy()
+        try:
+            root = Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            file_path = filedialog.askopenfilename(
+                title="Select JSON File",
+                filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
+            )
+            root.destroy()
 
-        if file_path:
-            self.file_path = file_path
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    self.json_data = json.load(f)
-                
-                typemap_path = f"{file_path}.typemap"
-                create_btn = self.query_one("#btn-create-typemap")
-                
-                if os.path.exists(typemap_path):
-                    with open(typemap_path, "r", encoding="utf-8") as f_type:
-                        self.typemap_data = json.load(f_type)
-                    self.typemap_exists = True
-                    create_btn.display = False  # Button ausblenden, wenn sie schon existiert
-                    self.notify("Typemap-Datei erfolgreich geladen!", severity="information")
-                else:
-                    self.typemap_data = {}
-                    self.typemap_exists = False
-                    create_btn.display = True  # Button einblenden, um Erstellung anzubieten
-                    self.notify("Keine Typemap gefunden. Modus: Nur JSON.", severity="warning")
+            if file_path:
+                # Synchronize the file path into the text input for visibility
+                self.query_one("#path-input", Input).value = file_path
+                self.load_json_from_path(file_path)
+        except Exception as e:
+            self.notify("OS File Dialog failed. Use the text input field below instead!", severity="warning")
 
-                self.query_one("#edit-fields").display = False
-                self.current_path = []
-                self.query_one("#search-input", Input).value = ""
-                self.refresh_tree()
-            except Exception as e:
-                self.notify(f"Fehler beim Laden: {e}", severity="error")
+    def load_json_from_path(self, file_path: str) -> None:
+        """Centralized method to load JSON and Typemap data"""
+        if not os.path.exists(file_path):
+            self.notify("File does not exist! Please check the path.", severity="error")
+            return
+
+        self.file_path = file_path
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                self.json_data = json.load(f)
+            
+            typemap_path = f"{file_path}.typemap"
+            create_btn = self.query_one("#btn-create-typemap")
+            
+            if os.path.exists(typemap_path):
+                with open(typemap_path, "r", encoding="utf-8") as f_type:
+                    self.typemap_data = json.load(f_type)
+                self.typemap_exists = True
+                create_btn.display = False
+                self.notify("Typemap file loaded successfully!", severity="information")
+            else:
+                self.typemap_data = {}
+                self.typemap_exists = False
+                create_btn.display = True
+                self.notify("No Typemap found. Mode: JSON only.", severity="warning")
+
+            self.query_one("#edit-fields").display = False
+            self.current_path = []
+            self.query_one("#search-input", Input).value = ""
+            self.refresh_tree()
+        except Exception as e:
+            self.notify(f"Loading error: {e}", severity="error")
 
     def generate_typemap_file(self) -> None:
-        """Generiert eine neue .typemap-Datei basierend auf den aktuellen JSON Keys."""
         if not self.file_path: return
         
         def extract_keys(data, keys_dict):
@@ -230,7 +260,7 @@ class JsonEditorApp(App):
         self.save_files_to_disk()
         
         self.query_one("#btn-create-typemap").display = False
-        self.notify(".typemap erfolgreich generiert und verknüpft!", severity="success")
+        self.notify(".typemap successfully generated and linked!", severity="success")
         
         if self.current_path:
             self.refresh_current_node_view()
@@ -271,7 +301,7 @@ class JsonEditorApp(App):
                     add_node_rec(child_node, value, path_here)
 
         add_node_rec(tree.root, self.json_data, [])
-        self.query_one("#status-msg", Label).update(f"Datei geladen: {os.path.basename(self.file_path)}")
+        self.query_one("#status-msg", Label).update(f"File loaded: {os.path.basename(self.file_path)}")
 
     def has_matching_child(self, data, search_term: str) -> bool:
         if isinstance(data, dict):
@@ -288,14 +318,13 @@ class JsonEditorApp(App):
         if not node.data or "path" not in node.data:
             self.current_path = []
             self.query_one("#edit-fields").display = False
-            self.query_one("#status-msg", Label).update("Root-Verzeichnis ausgewählt (Bereit zum Hinzufügen)")
+            self.query_one("#status-msg", Label).update("Root directory selected (Ready to add items)")
             return
 
         self.current_path = node.data["path"]
         self.refresh_current_node_view()
 
     def refresh_current_node_view(self) -> None:
-        """Hilfsfunktion, um die Eingabefelder mit dem aktuell gewählten Key-Pfad zu füllen."""
         if not self.current_path: return
         
         tree = self.query_one("#json-tree", Tree)
@@ -304,7 +333,7 @@ class JsonEditorApp(App):
         current_key = self.current_path[-1]
 
         path_str = " -> ".join(str(p) for p in self.current_path)
-        self.query_one("#status-msg", Label).update(f"Pfad: {path_str}")
+        self.query_one("#status-msg", Label).update(f"Path: {path_str}")
         self.query_one("#edit-fields").display = True
 
         input_key = self.query_one("#input-key", Input)
@@ -316,7 +345,7 @@ class JsonEditorApp(App):
             input_value.value = str(val)
             input_value.disabled = False
         else:
-            input_value.value = "[Verschachteltes Objekt / Liste]"
+            input_value.value = "[Nested Object / List]"
             input_value.disabled = True
 
         if self.typemap_exists:
@@ -341,15 +370,20 @@ class JsonEditorApp(App):
 
     def add_new_key_prompt(self) -> None:
         if not self.file_path:
-            self.notify("Bitte öffne zuerst eine JSON Datei!", severity="error")
+            self.notify("Please open a JSON file first!", severity="error")
             return
 
         from tkinter import simpledialog
-        root = Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        new_key = simpledialog.askstring("Neuer Key", "Wie soll der neue Key heißen?")
-        root.destroy()
+        try:
+            root = Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            new_key = simpledialog.askstring("New Key", "Enter the name for the new key:")
+            root.destroy()
+        except Exception:
+            # Fallback notification if Tkinter dialog fails inside TUI
+            self.notify("Dialog failed. CLI fallback input not implemented.", severity="error")
+            return
 
         if not new_key: return
         new_key = new_key.strip()
@@ -366,7 +400,7 @@ class JsonEditorApp(App):
 
         if isinstance(target_container, dict):
             if new_key in target_container:
-                self.notify("Key existiert bereits an dieser Position!", severity="error")
+                self.notify("Key already exists at this position!", severity="error")
                 return
             target_container[new_key] = ""
         elif isinstance(target_container, list):
@@ -381,11 +415,11 @@ class JsonEditorApp(App):
             }
 
         self.save_files_to_disk()
-        self.notify(f"Key '{new_key}' erfolgreich hinzugefügt!", severity="information")
+        self.notify(f"Key '{new_key}' successfully added!", severity="information")
 
     def delete_current_key(self) -> None:
         if not self.file_path or not self.current_path:
-            self.notify("Bitte wähle zuerst einen Key aus dem Baum aus!", severity="error")
+            self.notify("Please select a key from the tree view first!", severity="error")
             return
 
         target_key = self.current_path[-1]
@@ -407,7 +441,7 @@ class JsonEditorApp(App):
         self.query_one("#edit-fields").display = False
         
         self.save_files_to_disk()
-        self.notify(f"Eintrag '{key_str}' gelöscht!", severity="warning")
+        self.notify(f"Entry '{key_str}' deleted!", severity="warning")
 
     def parse_smart_value(self, text: str):
         val_clean = text.strip()
@@ -430,7 +464,7 @@ class JsonEditorApp(App):
     def handle_key_rename(self, target_key, new_key_text, parent_obj) -> bool:
         if str(target_key) == new_key_text or isinstance(target_key, int): return False
         if not new_key_text:
-            self.notify("Key darf nicht leer sein!", severity="error")
+            self.notify("Key name cannot be empty!", severity="error")
             return False
 
         new_dict = {}
@@ -476,7 +510,7 @@ class JsonEditorApp(App):
     def save_typemap_fields(self) -> None:
         if not self.current_path or not self.file_path: return
         if not self.typemap_exists:
-            self.notify("Für diese Datei existiert keine .typemap!", severity="error")
+            self.notify("No .typemap file exists for this JSON file!", severity="error")
             return
 
         new_key_text = self.query_one("#input-key", Input).value.strip()
@@ -488,7 +522,7 @@ class JsonEditorApp(App):
         key_str = str(self.current_path[-1])
         
         if isinstance(target_key, int):
-            self.notify("Typemap-Regeln können nicht für Listen-Indizes definiert werden.", severity="error")
+            self.notify("Typemap rules cannot be defined for list indexes.", severity="error")
             return
 
         selected_type = self.query_one("#tm-type", Select).value
@@ -517,11 +551,11 @@ class JsonEditorApp(App):
                 with open(typemap_path, "w", encoding="utf-8") as f_tm:
                     json.dump(self.typemap_data, f_tm, indent=4, ensure_ascii=False)
 
-            self.notify("Änderungen erfolgreich gespeichert!", severity="information")
+            self.notify("Changes saved successfully!", severity="information")
             current_search = self.query_one("#search-input", Input).value
             self.refresh_tree(search_term=current_search)
         except Exception as e:
-            self.notify(f"Fehler beim Speichern: {e}", severity="error")
+            self.notify(f"Error while saving: {e}", severity="error")
 
 if __name__ == "__main__":
     JsonEditorApp().run()

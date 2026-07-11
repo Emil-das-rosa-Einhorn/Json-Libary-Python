@@ -8,7 +8,7 @@ A collection of lightweight terminal-based utilities to efficiently manage, edit
 
 ### 1. JSON Editor & Validator
 **Status:** `In Development` 
-A feature-rich TUI (Terminal User Interface) built with `Textual` that lets you navigate complex JSON structures seamlessly.
+A feature-rich TUI (Terminal User Interface) built with `Textual` (Copyright (c) 2021 Will McGugan) that lets you navigate complex JSON structures seamlessly.
 
 *   **Tree Navigation:** Visualize your JSON structure as an interactive tree.
 *   **Live Filtering:** Quick search bar to filter keys instantly.
