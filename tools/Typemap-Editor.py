@@ -177,7 +177,6 @@ class JsonEditorApp(App):
             self.delete_current_key()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
-        # Triggers when Enter is pressed inside the manual path input field
         if event.input.id == "path-input":
             path = event.value.strip()
             if path:
@@ -199,7 +198,6 @@ class JsonEditorApp(App):
             root.destroy()
 
             if file_path:
-                # Synchronize the file path into the text input for visibility
                 self.query_one("#path-input", Input).value = file_path
                 self.load_json_from_path(file_path)
         except Exception as e:
@@ -381,7 +379,6 @@ class JsonEditorApp(App):
             new_key = simpledialog.askstring("New Key", "Enter the name for the new key:")
             root.destroy()
         except Exception:
-            # Fallback notification if Tkinter dialog fails inside TUI
             self.notify("Dialog failed. CLI fallback input not implemented.", severity="error")
             return
 
