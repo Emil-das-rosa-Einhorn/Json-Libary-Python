@@ -1,6 +1,7 @@
 # JSON Library Tools
 
 A collection of lightweight terminal-based utilities to efficiently manage, edit, and validate JSON structures and typemaps directly from your console.
+disclaimer: This Tool is mostly Vibe-coded and just for easy management of the typemap file.
 
 ---
 
